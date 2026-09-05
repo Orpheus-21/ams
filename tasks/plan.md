@@ -59,7 +59,7 @@ forward ahead of the compile engine — see Architecture Decisions.
 
 ### Phase 1: Foundation & Packaging Risk
 
-- [ ] Task 1: Scaffold Tauri 2 + Vite + TypeScript project
+- [x] Task 1: Scaffold Tauri 2 + Vite + TypeScript project
 - [ ] Task 2: CI cross-platform packaging proof (Windows + Linux)
 
 ### Checkpoint: Foundation
