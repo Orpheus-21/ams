@@ -37,7 +37,16 @@ const languageSizeGuard = EditorView.updateListener.of((update) => {
 
 let view: EditorView | null = null;
 
-export function mountEditor(parent: HTMLElement, initialContent = ""): EditorView {
+export function mountEditor(
+  parent: HTMLElement,
+  options: { initialContent?: string; onChange?: () => void } = {},
+): EditorView {
+  const { initialContent = "", onChange } = options;
+
+  const changeNotifier = EditorView.updateListener.of((update) => {
+    if (update.docChanged) onChange?.();
+  });
+
   view = new EditorView({
     state: EditorState.create({
       doc: initialContent,
@@ -45,6 +54,7 @@ export function mountEditor(parent: HTMLElement, initialContent = ""): EditorVie
         basicSetup,
         language.of(languageExtension(countLines(initialContent))),
         languageSizeGuard,
+        ...(onChange ? [changeNotifier] : []),
       ],
     }),
     parent,

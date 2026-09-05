@@ -141,8 +141,12 @@ fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
             inner.document = Some(output.document);
             CompileResult { success: true, pages, diagnostics }
         }
+        // A failed compile keeps the last good document renderable on purpose:
+        // half-typed markup errors constantly while editing, and blanking the
+        // preview on each one is worse than showing the last good render with
+        // the error surfaced in the UI. `reset`/`open_at`/`save_at` do clear
+        // it, since those genuinely change which document is open.
         Err(err) => {
-            inner.document = None;
             CompileResult { success: false, pages: Vec::new(), diagnostics: error_diagnostics(&err) }
         }
     }
@@ -332,11 +336,27 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_compile_clears_the_previously_rendered_document() {
+    fn a_failed_compile_keeps_the_last_good_document_renderable() {
         let state = DocumentState::default();
         compile_at(&state, "= Hello\nBody text.");
         compile_at(&state, "#unknown_function()");
-        assert!(render_page_at(&state, 0, 1.0).is_err(), "stale document must not still be renderable");
+        assert!(
+            render_page_at(&state, 0, 1.0).is_ok(),
+            "the preview should keep showing the last good render while the source has an error"
+        );
+    }
+
+    #[test]
+    fn opening_a_different_document_drops_the_previous_render() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("doc.typ");
+        fs::write(&path, "= Other").unwrap();
+
+        let state = DocumentState::default();
+        compile_at(&state, "= Hello");
+        open_at(&state, path).unwrap();
+
+        assert!(render_page_at(&state, 0, 1.0).is_err(), "a newly opened document has nothing rendered yet");
     }
 
     #[test]

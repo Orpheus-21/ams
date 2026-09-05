@@ -46,3 +46,23 @@ body {
   height: 100%;
   display: block;
 }
+
+#diagnostics {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fff;
+  background: #b3261e;
+}
+
+#diagnostics[data-severity="warning"] {
+  color: #241a00;
+  background: #ffd666;
+}
