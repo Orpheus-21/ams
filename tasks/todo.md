@@ -30,7 +30,7 @@ This file is the checklist `/build` and future sessions track progress against.
 ## Phase 3: Core Loop — Editor + Preview + File I/O
 
 - [ ] Task 8: Tauri commands for file I/O + compile invocation
-- [ ] Task 9: Editor pane (CodeMirror 6 + Typst syntax highlighting)
+- [x] Task 9: Editor pane (CodeMirror 6 + Typst syntax highlighting)
 - [ ] Task 10: Preview pane (virtualized canvas rendering)
 - [ ] Task 11: Wire the full edit → compile → preview loop end-to-end
 

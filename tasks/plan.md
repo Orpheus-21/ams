@@ -85,7 +85,7 @@ forward ahead of the compile engine — see Architecture Decisions.
 ### Phase 3: Core Loop — Editor + Preview + File I/O (vertical slice)
 
 - [ ] Task 8: Tauri commands for file I/O + compile invocation
-- [ ] Task 9: Editor pane (CodeMirror 6 + Typst syntax highlighting)
+- [x] Task 9: Editor pane (CodeMirror 6 + Typst syntax highlighting)
 - [ ] Task 10: Preview pane (virtualized canvas rendering)
 - [ ] Task 11: Wire the full edit → compile → preview loop end-to-end
 
@@ -316,20 +316,29 @@ syntax highlighting via a Lezer grammar — check for an existing community gram
 minimal one only if none is adequate (ladder rung 2 before rung 7).
 
 **Acceptance criteria:**
-- [ ] CodeMirror 6 renders in the app, editable, with Typst-aware syntax highlighting
-- [ ] Editor handles a large (~500 page) document without input lag (CM6's own virtualization
+- [x] CodeMirror 6 renders in the app, editable, with Typst-aware syntax highlighting
+- [x] Editor handles a large (~500 page) document without input lag (CM6's own virtualization
       should cover this — verify it does)
-- [ ] Editor content is retrievable by the rest of the app (for compile + save)
+- [x] Editor content is retrievable by the rest of the app (for compile + save)
 
 **Verification:**
-- [ ] Build succeeds: `pnpm tauri build`
-- [ ] Manual check: open a large fixture doc, scroll and type, confirm no lag
+- [x] Build succeeds: `pnpm tauri build`
+- [x] Manual check: open a large fixture doc, scroll and type, confirm no lag
 
 **Dependencies:** Task 1
 
 **Files likely touched:** `src/editor/setup.ts`, `src/editor/typst-lang.ts`, `src/main.ts`
 
 **Estimated scope:** M
+
+**Outcome note:** used the community `codemirror-lang-typst` package rather than writing a
+grammar. Discovered its parser has no real incremental reparse (full reparse per edit), which at
+large-document size blocked the main thread for ~300-450ms per keystroke — a direct violation of
+the "must not hang" requirement. Mitigated with a line-count-gated `Compartment` that drops syntax
+highlighting above 2000 lines (marked `ponytail:` in `src/editor/setup.ts` with the upgrade path:
+real incremental reparsing upstream, or a proper `@lezer/lr` grammar). Net effect: very large
+documents (a 500-page doc will likely cross 2000 lines) edit without lag but lose highlighting —
+a real v1 product tradeoff, not just an implementation detail.
 
 ---
 
