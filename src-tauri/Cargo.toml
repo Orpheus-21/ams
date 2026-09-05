@@ -26,7 +26,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 typst = "=0.15.1"
 typst-layout = "=0.15.1"
+typst-render = "=0.15.1"
 typst-kit = { version = "=0.15.1", features = ["embedded-fonts", "datetime"] }
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = "3"

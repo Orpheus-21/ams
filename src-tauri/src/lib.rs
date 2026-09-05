@@ -14,6 +14,7 @@ pub fn run() {
             commands::open_document,
             commands::save_document,
             commands::compile_document,
+            commands::render_page,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -14,9 +14,14 @@ export interface Diagnostic {
   message: string;
 }
 
+export interface PageInfo {
+  width_pt: number;
+  height_pt: number;
+}
+
 export interface CompileResult {
   success: boolean;
-  page_count: number;
+  pages: PageInfo[];
   diagnostics: Diagnostic[];
 }
 

@@ -7,15 +7,19 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use base64::Engine;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
+use typst_layout::PagedDocument;
 
 use crate::compile::{CompileError, CompileSession};
 
-/// The single open document's state: which file (if any) it's saved to, and
-/// the compile session tied to that file's directory (for sibling-asset
-/// resolution and incremental recompilation across edits).
+/// The single open document's state: which file (if any) it's saved to, the
+/// compile session tied to that file's directory (for sibling-asset
+/// resolution and incremental recompilation across edits), and the last
+/// successfully compiled document (so rendering a page doesn't require
+/// recompiling — see `render_page`).
 pub struct DocumentState {
     inner: Mutex<Inner>,
 }
@@ -23,11 +27,18 @@ pub struct DocumentState {
 struct Inner {
     path: Option<PathBuf>,
     session: CompileSession,
+    document: Option<PagedDocument>,
 }
 
 impl Default for DocumentState {
     fn default() -> Self {
-        Self { inner: Mutex::new(Inner { path: None, session: CompileSession::detached(String::new()) }) }
+        Self {
+            inner: Mutex::new(Inner {
+                path: None,
+                session: CompileSession::detached(String::new()),
+                document: None,
+            }),
+        }
     }
 }
 
@@ -38,10 +49,26 @@ pub struct OpenedDocument {
 }
 
 #[derive(Serialize)]
+pub struct PageInfo {
+    pub width_pt: f64,
+    pub height_pt: f64,
+}
+
+#[derive(Serialize)]
 pub struct CompileResult {
     pub success: bool,
-    pub page_count: usize,
+    pub pages: Vec<PageInfo>,
     pub diagnostics: Vec<Diagnostic>,
+}
+
+#[derive(Serialize)]
+pub struct RenderedPage {
+    pub width: u32,
+    pub height: u32,
+    /// Base64-encoded PNG. Tauri's default IPC serializes `Vec<u8>` as a JSON
+    /// array of numbers, which is far heavier over the wire than base64 text
+    /// for image-sized payloads.
+    pub png_base64: String,
 }
 
 #[derive(Serialize)]
@@ -68,6 +95,7 @@ fn reset(state: &DocumentState) {
     let mut inner = state.inner.lock().unwrap();
     inner.path = None;
     inner.session = CompileSession::detached(String::new());
+    inner.document = None;
 }
 
 fn open_at(state: &DocumentState, path: PathBuf) -> Result<OpenedDocument, String> {
@@ -75,6 +103,7 @@ fn open_at(state: &DocumentState, path: PathBuf) -> Result<OpenedDocument, Strin
     let mut inner = state.inner.lock().unwrap();
     inner.session = CompileSession::new(root_of(&path), &file_name_of(&path), text.clone());
     inner.path = Some(path.clone());
+    inner.document = None;
     Ok(OpenedDocument { path: path.display().to_string(), text })
 }
 
@@ -83,6 +112,7 @@ fn save_at(state: &DocumentState, path: PathBuf, text: String) -> Result<String,
     let mut inner = state.inner.lock().unwrap();
     inner.session = CompileSession::new(root_of(&path), &file_name_of(&path), text);
     inner.path = Some(path.clone());
+    inner.document = None;
     Ok(path.display().to_string())
 }
 
@@ -93,17 +123,50 @@ fn current_path(state: &DocumentState) -> Option<PathBuf> {
 fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
     let mut inner = state.inner.lock().unwrap();
     match inner.session.recompile(text) {
-        Ok(output) => CompileResult {
-            success: true,
-            page_count: output.document.pages().len(),
-            diagnostics: output
+        Ok(output) => {
+            let pages = output
+                .document
+                .pages()
+                .iter()
+                .map(|page| PageInfo {
+                    width_pt: page.frame.width().to_pt(),
+                    height_pt: page.frame.height().to_pt(),
+                })
+                .collect();
+            let diagnostics = output
                 .warnings
                 .iter()
                 .map(|w| Diagnostic { severity: "warning", message: w.message.to_string() })
-                .collect(),
-        },
-        Err(err) => CompileResult { success: false, page_count: 0, diagnostics: error_diagnostics(&err) },
+                .collect();
+            inner.document = Some(output.document);
+            CompileResult { success: true, pages, diagnostics }
+        }
+        Err(err) => {
+            inner.document = None;
+            CompileResult { success: false, pages: Vec::new(), diagnostics: error_diagnostics(&err) }
+        }
     }
+}
+
+/// Rasterizes one page of the last successfully compiled document to PNG, at
+/// `pixel_per_pt` resolution. Never re-renders the whole document — the
+/// caller (the preview pane's viewport virtualization) decides which single
+/// page it currently needs.
+fn render_page_at(state: &DocumentState, index: usize, pixel_per_pt: f32) -> Result<RenderedPage, String> {
+    let inner = state.inner.lock().unwrap();
+    let document = inner.document.as_ref().ok_or("no compiled document to render")?;
+    let page = document.pages().get(index).ok_or_else(|| format!("page index {index} out of range"))?;
+
+    let options =
+        typst_render::RenderOptions { pixel_per_pt: (pixel_per_pt as f64).into(), ..Default::default() };
+    let pixmap = typst_render::render(page, &options);
+    let png_bytes = pixmap.encode_png().map_err(|e| e.to_string())?;
+
+    Ok(RenderedPage {
+        width: pixmap.width(),
+        height: pixmap.height(),
+        png_base64: base64::engine::general_purpose::STANDARD.encode(png_bytes),
+    })
 }
 
 // -- Tauri commands -----------------------------------------------------
@@ -162,6 +225,18 @@ pub async fn compile_document(app: AppHandle, text: String) -> Result<CompileRes
     .map_err(|e| e.to_string())
 }
 
+/// Renders one page of the last compiled document. Also runs on a
+/// blocking-task thread: rasterizing is CPU-bound like compilation is.
+#[tauri::command]
+pub async fn render_page(app: AppHandle, index: usize, pixel_per_pt: f32) -> Result<RenderedPage, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<DocumentState>();
+        render_page_at(&state, index, pixel_per_pt)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -212,11 +287,13 @@ mod tests {
     }
 
     #[test]
-    fn compile_success_reports_page_count() {
+    fn compile_success_reports_page_geometry() {
         let state = DocumentState::default();
         let result = compile_at(&state, "= Hello\nBody text.");
         assert!(result.success);
-        assert_eq!(result.page_count, 1);
+        assert_eq!(result.pages.len(), 1);
+        assert!(result.pages[0].width_pt > 0.0);
+        assert!(result.pages[0].height_pt > 0.0);
     }
 
     #[test]
@@ -224,7 +301,42 @@ mod tests {
         let state = DocumentState::default();
         let result = compile_at(&state, "#unknown_function()");
         assert!(!result.success);
+        assert!(result.pages.is_empty());
         assert!(!result.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn render_page_rasterizes_the_last_compiled_document() {
+        let state = DocumentState::default();
+        compile_at(&state, "= Hello\nBody text.");
+
+        let rendered = render_page_at(&state, 0, 2.0).expect("render should succeed");
+
+        assert!(rendered.width > 0 && rendered.height > 0);
+        assert!(!rendered.png_base64.is_empty());
+        let png_bytes = base64::engine::general_purpose::STANDARD.decode(&rendered.png_base64).unwrap();
+        assert_eq!(&png_bytes[..8], b"\x89PNG\r\n\x1a\n", "should be a real PNG");
+    }
+
+    #[test]
+    fn render_page_out_of_range_is_an_error_not_a_panic() {
+        let state = DocumentState::default();
+        compile_at(&state, "= Hello");
+        assert!(render_page_at(&state, 5, 1.0).is_err());
+    }
+
+    #[test]
+    fn render_page_before_any_compile_is_an_error_not_a_panic() {
+        let state = DocumentState::default();
+        assert!(render_page_at(&state, 0, 1.0).is_err());
+    }
+
+    #[test]
+    fn a_failed_compile_clears_the_previously_rendered_document() {
+        let state = DocumentState::default();
+        compile_at(&state, "= Hello\nBody text.");
+        compile_at(&state, "#unknown_function()");
+        assert!(render_page_at(&state, 0, 1.0).is_err(), "stale document must not still be renderable");
     }
 
     #[test]
