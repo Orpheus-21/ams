@@ -86,7 +86,7 @@ forward ahead of the compile engine — see Architecture Decisions.
 
 - [x] Task 8: Tauri commands for file I/O + compile invocation
 - [x] Task 9: Editor pane (CodeMirror 6 + Typst syntax highlighting)
-- [ ] Task 10: Preview pane (virtualized canvas rendering)
+- [x] Task 10: Preview pane (virtualized canvas rendering)
 - [ ] Task 11: Wire the full edit → compile → preview loop end-to-end
 
 ### Checkpoint: Core Loop
