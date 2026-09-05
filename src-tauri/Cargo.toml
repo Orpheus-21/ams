@@ -27,3 +27,11 @@ typst = "=0.15.1"
 typst-layout = "=0.15.1"
 typst-kit = { version = "=0.15.1", features = ["embedded-fonts", "datetime"] }
 
+# `cargo test --workspace` must exercise the 100ms recompile-latency budget
+# (Task 7) realistically: Typst's layout code is CPU-heavy enough that the
+# default unoptimized test profile alone runs several times slower than a
+# release build, making the budget meaningless. Optimizing just the `test`
+# profile keeps `cargo build`/`pnpm tauri dev` iteration untouched.
+[profile.test]
+opt-level = 2
+
