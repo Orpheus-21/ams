@@ -3,8 +3,10 @@
 //! recompilation across edits. See `SPEC.md`'s Tech Stack section.
 
 mod fonts;
+mod session;
 mod world;
 
+pub use session::CompileSession;
 pub use world::AmsWorld;
 
 use typst::diag::{SourceDiagnostic, Warned};
