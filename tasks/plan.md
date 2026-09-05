@@ -60,12 +60,15 @@ forward ahead of the compile engine — see Architecture Decisions.
 ### Phase 1: Foundation & Packaging Risk
 
 - [x] Task 1: Scaffold Tauri 2 + Vite + TypeScript project
-- [ ] Task 2: CI cross-platform packaging proof (Windows + Linux)
+- [x] Task 2: CI cross-platform packaging proof (Windows + Linux)
 
 ### Checkpoint: Foundation
-- [ ] Empty scaffold app builds via `pnpm tauri build` locally
-- [ ] CI produces a Windows `.msi`/`.exe` and a Linux AppImage as build artifacts
-- [ ] Both artifacts install/launch (manual check, even on an empty window)
+- [x] Builds via `pnpm tauri build` locally (binary + `.deb`/`.rpm`; local AppImage bundling
+      fails on Arch — linuxdeploy-plugin-gtk expects a Debian-style gdk-pixbuf layout — which is
+      exactly why the authoritative Linux build is CI's Ubuntu runner)
+- [x] CI produces a Windows `.msi` + NSIS `.exe` and a Linux AppImage as build artifacts,
+      verified by downloading and inspecting them
+- [ ] Both artifacts install/launch on a clean machine — deferred to Task 14
 - [ ] Review with human before proceeding
 
 ### Phase 2: Compile Engine (Rust core)

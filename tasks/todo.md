@@ -6,12 +6,16 @@ This file is the checklist `/build` and future sessions track progress against.
 ## Phase 1: Foundation & Packaging Risk
 
 - [x] Task 1: Scaffold Tauri 2 + Vite + TypeScript project
-- [ ] Task 2: CI cross-platform packaging proof (Windows + Linux)
+- [x] Task 2: CI cross-platform packaging proof (Windows + Linux)
 
 ### Checkpoint: Foundation
-- [ ] Empty scaffold builds via `pnpm tauri build` locally
-- [ ] CI produces a Windows `.msi`/`.exe` and a Linux AppImage as artifacts
-- [ ] Both artifacts install/launch
+- [x] Builds via `pnpm tauri build` locally (binary + `.deb`/`.rpm`; AppImage bundling fails on
+      this Arch dev box because linuxdeploy-plugin-gtk expects a Debian-style gdk-pixbuf layout —
+      not an app bug, and CI's Ubuntu runner produces the AppImage correctly)
+- [x] CI produces a Windows `.msi` + NSIS `.exe` and a Linux AppImage as artifacts (verified by
+      downloading them: real PE32 NSIS installer, real MSI database, real ELF AppImage)
+- [ ] Both artifacts install/launch on a clean machine — Windows side is Task 14, on the
+      founder's own Windows laptop
 - [ ] Reviewed with human
 
 ## Phase 2: Compile Engine
