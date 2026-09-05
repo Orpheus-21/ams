@@ -70,16 +70,16 @@ forward ahead of the compile engine — see Architecture Decisions.
 
 ### Phase 2: Compile Engine (Rust core)
 
-- [ ] Task 3: Embed `typst` crate + minimal `World` implementation
-- [ ] Task 4: Bundle default font set
-- [ ] Task 5: Incremental recompilation via cache reuse
-- [ ] Task 6: Sibling-path resolution for images/`.bib` files
-- [ ] Task 7: Large-document recompile-latency benchmark test (100ms budget)
+- [x] Task 3: Embed `typst` crate + minimal `World` implementation
+- [x] Task 4: Bundle default font set
+- [x] Task 5: Incremental recompilation via cache reuse
+- [x] Task 6: Sibling-path resolution for images/`.bib` files
+- [x] Task 7: Large-document recompile-latency benchmark test (100ms budget)
 
 ### Checkpoint: Compile Engine
-- [ ] `cargo test --workspace` passes, including the benchmark test
-- [ ] `cargo clippy --workspace -- -D warnings` clean
-- [ ] Compile engine is exercised end-to-end via tests without any UI existing yet
+- [x] `cargo test --workspace` passes, including the benchmark test
+- [x] `cargo clippy --workspace -- -D warnings` clean
+- [x] Compile engine is exercised end-to-end via tests without any UI existing yet
 - [ ] Review with human before proceeding
 
 ### Phase 3: Core Loop — Editor + Preview + File I/O (vertical slice)
