@@ -8,12 +8,21 @@ importers:
 
   .:
     dependencies:
+      '@codemirror/state':
+        specifier: ^6.7.3
+        version: 6.7.3
       '@tauri-apps/api':
         specifier: ^2
         version: 2.11.1
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.5.5
+      codemirror:
+        specifier: ^6.0.2
+        version: 6.0.2
+      codemirror-lang-typst:
+        specifier: ^0.6.0
+        version: 0.6.0
     devDependencies:
       '@tauri-apps/cli':
         specifier: ^2
@@ -26,6 +35,27 @@ importers:
         version: 6.4.3
 
 packages:
+
+  '@codemirror/autocomplete@6.20.3':
+    resolution: {integrity: sha512-tlosUqb+3BbxCxZdu4tKeRghPFC+QM7q4X5YhKV2eCmPG+1r2F3f4AaSz5sCrFqUtX4Jh20VFTKecl16MgiV9g==}
+
+  '@codemirror/commands@6.11.0':
+    resolution: {integrity: sha512-/K4Rl5BN0OtTiPWmJCdqODu38XnDMsDxKY5rgrPnCkutPTJf2wVbkoixLfealF5Kwse/s8P8M5jAiURiwSwnFA==}
+
+  '@codemirror/language@6.12.4':
+    resolution: {integrity: sha512-1q4PaT+o6PbgpkJt4Q8Fv5XJxTy4FUZ4MWETtyiDw3J0Pyr9E2vqcKL+k9wcvjNTIsauxvE7OfmWj3FRPHQ76A==}
+
+  '@codemirror/lint@6.9.7':
+    resolution: {integrity: sha512-28/+iWLYxKxsvGYhSYL7zaCZqLz5+FFFDq9tVsvGv9kv8RY4fFAchJ5WX9M3YrrRlTIsECjsXPqeNgnSmNP2dg==}
+
+  '@codemirror/search@6.7.2':
+    resolution: {integrity: sha512-gUYkYhT2+n/+VGZ+8EzE5WFkYZUZYm1VOKDudIsNqh42uRVQJ0a6Yss9sdKT3MeOYfuL1N6AZA57oza0Oyr0LA==}
+
+  '@codemirror/state@6.7.3':
+    resolution: {integrity: sha512-9aCZCzB5okKHVnUXivo+BXVzZz9b0SA4LAmGX60LuCXT7QjNCEHcD/kdmfYg7vAX3g1O+fy4Cpl6xFsWX2H/lQ==}
+
+  '@codemirror/view@6.43.11':
+    resolution: {integrity: sha512-2+esucbQX6wB2JYi1eDvdCPFTA31BN8oSy6xCmk3G6CloV11yOvEjYk+gH7kLrP0MuHG94E8WDhjs5oMiu3+Wg==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -182,6 +212,18 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@lezer/common@1.5.2':
+    resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
+
+  '@lezer/highlight@1.2.3':
+    resolution: {integrity: sha512-qXdH7UqTvGfdVBINrgKhDsVTJTxactNNxLk7+UMwZhU13lMHaOBlJe9Vqp907ya56Y3+ed2tlqzys7jDkTmW0g==}
+
+  '@lezer/lr@1.4.10':
+    resolution: {integrity: sha512-rnCpTIBafOx4mRp43xOxDJbFipJm/c0cia/V5TiGlhmMa+wsSdoGmUN3w5Bqrks/09Q/D4tNAmWaT8p6NRi77A==}
+
+  '@marijn/find-cluster-break@1.0.4':
+    resolution: {integrity: sha512-Wy0V7+SGUjnF9/TkiM1hKVDPj7jKXduPNboMVtHTA8dySMURWqfg/JZ9E2Sq8JgSJmkl7k7Qe9FLeMSrSraWmQ==}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     resolution: {integrity: sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==}
@@ -413,6 +455,15 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  codemirror-lang-typst@0.6.0:
+    resolution: {integrity: sha512-arxPg4g2tc+VeDErihW0+PuYQ5Hl7sAQ1FgqF/Hbta+0pRF6YER6L+S+QUFE56ev9azfxWYqMqHOuPQmPjEgSQ==}
+
+  codemirror@6.0.2:
+    resolution: {integrity: sha512-VhydHotNW5w1UGK0Qj96BwSk/Zqbp9WbnyK2W/eVMv4QyF41INRGpjUhFJY7/uDNuudSc33a/PKr4iDqRduvHw==}
+
+  crelt@1.0.7:
+    resolution: {integrity: sha512-aK6BbWfhf4U/wCcLHKPJl/xa6VkVstRaPywWtMKGwuOLc/wZTyQYuoxgvZnNsBvv7Kg3YTBQYYBCggcviQczuA==}
+
   esbuild@0.25.12:
     resolution: {integrity: sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==}
     engines: {node: '>=18'}
@@ -456,6 +507,9 @@ packages:
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
+
+  style-mod@4.1.3:
+    resolution: {integrity: sha512-i/n8VsZydrugj3Iuzll8+x/00GH2vnYsk1eomD8QiRrSAeW6ItbCQDtfXCeJHd0iwiNagqjQkvpvREEPtW3IoQ==}
 
   tinyglobby@0.2.17:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
@@ -506,7 +560,56 @@ packages:
       yaml:
         optional: true
 
+  w3c-keyname@2.2.8:
+    resolution: {integrity: sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ==}
+
 snapshots:
+
+  '@codemirror/autocomplete@6.20.3':
+    dependencies:
+      '@codemirror/language': 6.12.4
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      '@lezer/common': 1.5.2
+
+  '@codemirror/commands@6.11.0':
+    dependencies:
+      '@codemirror/language': 6.12.4
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      '@lezer/common': 1.5.2
+
+  '@codemirror/language@6.12.4':
+    dependencies:
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      '@lezer/common': 1.5.2
+      '@lezer/highlight': 1.2.3
+      '@lezer/lr': 1.4.10
+      style-mod: 4.1.3
+
+  '@codemirror/lint@6.9.7':
+    dependencies:
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      crelt: 1.0.7
+
+  '@codemirror/search@6.7.2':
+    dependencies:
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      crelt: 1.0.7
+
+  '@codemirror/state@6.7.3':
+    dependencies:
+      '@marijn/find-cluster-break': 1.0.4
+
+  '@codemirror/view@6.43.11':
+    dependencies:
+      '@codemirror/state': 6.7.3
+      crelt: 1.0.7
+      style-mod: 4.1.3
+      w3c-keyname: 2.2.8
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -585,6 +688,18 @@ snapshots:
 
   '@esbuild/win32-x64@0.25.12':
     optional: true
+
+  '@lezer/common@1.5.2': {}
+
+  '@lezer/highlight@1.2.3':
+    dependencies:
+      '@lezer/common': 1.5.2
+
+  '@lezer/lr@1.4.10':
+    dependencies:
+      '@lezer/common': 1.5.2
+
+  '@marijn/find-cluster-break@1.0.4': {}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
@@ -719,6 +834,28 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  codemirror-lang-typst@0.6.0:
+    dependencies:
+      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/language': 6.12.4
+      '@codemirror/lint': 6.9.7
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+      '@lezer/common': 1.5.2
+      '@lezer/highlight': 1.2.3
+
+  codemirror@6.0.2:
+    dependencies:
+      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/commands': 6.11.0
+      '@codemirror/language': 6.12.4
+      '@codemirror/lint': 6.9.7
+      '@codemirror/search': 6.7.2
+      '@codemirror/state': 6.7.3
+      '@codemirror/view': 6.43.11
+
+  crelt@1.0.7: {}
+
   esbuild@0.25.12:
     optionalDependencies:
       '@esbuild/aix-ppc64': 0.25.12
@@ -801,6 +938,8 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
+  style-mod@4.1.3: {}
+
   tinyglobby@0.2.17:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.7)
@@ -818,3 +957,5 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
+
+  w3c-keyname@2.2.8: {}
