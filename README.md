@@ -1,23 +1,68 @@
 # ams
 
-A native, fast, keyboard-first desktop app for writing Typst documents — for people who currently
-write everyday documents in Word and want Typst's speed and typographic control without a
-terminal, VS Code, or any configuration.
+Write [Typst](https://typst.app) documents in a desktop app. Markup on the left, rendered
+pages on the right, updating as you type. No terminal, no editor extension, no config.
 
-See `docs/intent/ams.md` for the confirmed product intent, `SPEC.md` for the v1 specification, and
-`tasks/plan.md` for the implementation plan.
+Typst is excellent and its tooling assumes you're a programmer. ams is for people who
+aren't.
 
-## License
+## install
 
-Copyright (C) 2026 Orpheus-21
+Windows and Linux. No macOS build.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the
-GNU General Public License as published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+Grab an installer from the [latest build](https://github.com/Orpheus-21/ams/actions):
+open the newest green run, download `ams-windows` or `ams-linux` from Artifacts.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details.
+- **Windows**: unzip, run `ams_x.y.z_x64-setup.exe`. Windows will say *"Windows protected
+  your PC"* because the installer isn't code-signed — More info → Run anyway. Installs
+  per-user, no admin prompt.
+- **Linux**: unzip, `chmod +x ams_x.y.z_amd64.AppImage`, run it.
 
-You should have received a copy of the GNU General Public License along with this program. If
-not, see <https://www.gnu.org/licenses/>.
+## use
+
+Type Typst markup. The preview updates about 120ms after you stop.
+
+    = A heading
+
+    Some text, with *bold* and _italic_.
+
+Everything is on the menu bar, with its shortcut next to it. `F1` lists them.
+
+Documents are plain `.typ` files. Images and `.bib` files are resolved relative to the
+document, so put them in the same folder — use your file manager, ams has no file browser.
+
+New to Typst? The [official docs](https://typst.app/docs) are genuinely good, and its
+[package registry](https://typst.app/universe) has templates for most document types.
+
+## what it doesn't do
+
+- No visual/WYSIWYG editing. You write markup. That's the point of Typst.
+- No importing `.docx`. Start your next document here instead.
+- No file tree, no tabs, no project management. One document at a time.
+- Syntax highlighting switches off above 2000 lines. The available Typst grammar reparses
+  the whole document on every keystroke, which stalls long documents; editing stays fast
+  without it. Fixable upstream, not fixed here.
+- Packages (`#import "@preview/..."`) need internet the first time — Typst caches them
+  after that. Making a fresh install work fully offline is a later job.
+
+## build
+
+Needs Rust, Node, pnpm, and the [Tauri Linux
+deps](https://tauri.app/start/prerequisites/) if you're on Linux.
+
+    pnpm install
+    pnpm tauri dev
+
+    cargo test --workspace --manifest-path src-tauri/Cargo.toml
+    cargo clippy --workspace --manifest-path src-tauri/Cargo.toml -- -D warnings
+    pnpm exec tsc --noEmit
+
+`pnpm tauri build` produces installers. AppImage bundling fails on Arch — `linuxdeploy`
+expects a Debian-style gdk-pixbuf layout — so Linux releases are built in CI on Ubuntu.
+Use `--no-bundle` locally.
+
+`SPEC.md` is what ams is meant to be; `tasks/plan.md` is how it got here and what's left.
+
+## license
+
+GPL-3.0-or-later. Copyright (C) 2026 Orpheus-21. See `LICENSE`.
