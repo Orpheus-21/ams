@@ -10,8 +10,10 @@ use std::path::PathBuf;
 
 use typst::syntax::DiagSpan;
 
+use typst_layout::PagedDocument;
+
 use super::world::AmsWorld;
-use super::{compile, CompileError, CompileOutput};
+use super::{compile, completions_at, CompileError, CompileOutput, Completions};
 
 /// A document's compile session: owns the [`AmsWorld`] for its lifetime.
 pub struct CompileSession {
@@ -36,6 +38,21 @@ impl CompileSession {
         self.world.begin_compile();
         self.world.set_text(text);
         compile(&self.world)
+    }
+
+    /// Completions at `cursor` (a UTF-16 offset) for `text`.
+    ///
+    /// Updates the world's text without compiling: completions must reflect
+    /// what the user has typed this instant, and waiting for a compile would
+    /// make the popup lag behind the keyboard.
+    pub fn completions(
+        &mut self,
+        text: &str,
+        cursor: usize,
+        document: Option<&PagedDocument>,
+    ) -> Completions {
+        self.world.set_text(text);
+        completions_at(&self.world, document, cursor)
     }
 
     /// 1-based line and column of a diagnostic in the current text. See

@@ -100,6 +100,12 @@ impl AmsWorld {
         self.main_source.replace(text);
     }
 
+    /// The document's current source, for tooling that inspects it directly
+    /// (completions) rather than going through the `World` trait.
+    pub fn main_source(&self) -> &Source {
+        &self.main_source
+    }
+
     /// 1-based line and column of a diagnostic inside the main document.
     ///
     /// Returns `None` for diagnostics that don't point anywhere (Typst calls

@@ -15,7 +15,7 @@ use typst_layout::PagedDocument;
 
 use typst::diag::SourceDiagnostic;
 
-use crate::compile::CompileSession;
+use crate::compile::{CompileSession, Completions};
 
 /// The single open document's state: which file (if any) it's saved to, the
 /// compile session tied to that file's directory (for sibling-asset
@@ -186,6 +186,12 @@ fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
     }
 }
 
+fn complete_at(state: &DocumentState, text: &str, cursor: usize) -> Completions {
+    let mut inner = state.inner.lock().unwrap();
+    let Inner { session, document, .. } = &mut *inner;
+    session.completions(text, cursor, document.as_ref())
+}
+
 /// Rasterizes one page of the last successfully compiled document to PNG, at
 /// `pixel_per_pt` resolution. Never re-renders the whole document — the
 /// caller (the preview pane's viewport virtualization) decides which single
@@ -275,6 +281,17 @@ pub async fn compile_document(app: AppHandle, text: String) -> Result<CompileRes
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DocumentState>();
         compile_at(&state, &text)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Completions at the cursor, from Typst's own compiler.
+#[tauri::command]
+pub async fn complete(app: AppHandle, text: String, cursor: usize) -> Result<Completions, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<DocumentState>();
+        complete_at(&state, &text, cursor)
     })
     .await
     .map_err(|e| e.to_string())

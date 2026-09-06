@@ -16,6 +16,7 @@ const INK_MUTED = "#6d655a";
 const INK_FAINT = "#9a9184";
 const SURFACE = "#faf7f1";
 const RULE = "#e3dbcd";
+const RULE_STRONG = "#cbc0ad";
 const ACCENT = "#7a4a2b";
 const SELECTION = "#e6ddc9";
 const ACTIVE_LINE = "#f2ece1";
@@ -76,6 +77,52 @@ export const editorTheme = EditorView.theme(
     ".cm-tooltip": {
       backgroundColor: SURFACE,
       border: `1px solid ${RULE}`,
+    },
+
+    // The completion popup is themed here rather than in styles.css because
+    // CodeMirror injects its own base theme with a precedence a plain
+    // stylesheet loses to — the selected row stayed default blue.
+    ".cm-tooltip.cm-tooltip-autocomplete": {
+      minWidth: "26em",
+      maxWidth: "40em",
+      border: `1px solid ${RULE_STRONG}`,
+      borderRadius: "6px",
+      backgroundColor: SURFACE,
+      boxShadow: "0 6px 20px rgba(35, 32, 28, 0.22)",
+      overflow: "hidden",
+    },
+    ".cm-tooltip-autocomplete > ul": {
+      maxHeight: "16em",
+      fontFamily: '"Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontSize: "12.5px",
+    },
+    ".cm-tooltip-autocomplete > ul > li": {
+      display: "flex",
+      alignItems: "baseline",
+      gap: "14px",
+      padding: "4px 10px",
+      color: INK,
+    },
+    ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+      backgroundColor: SELECTION,
+      color: INK,
+    },
+    // The one-line description is the part that teaches, so it stays legible
+    // rather than being dimmed into decoration.
+    ".cm-completionDetail": {
+      marginLeft: "auto",
+      fontFamily: '"Segoe UI", Inter, system-ui, sans-serif',
+      fontStyle: "normal",
+      fontSize: "11.5px",
+      color: INK_MUTED,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    },
+    ".cm-completionMatchedText": {
+      textDecoration: "none",
+      fontWeight: "700",
+      color: ACCENT,
     },
   },
   { dark: false },

@@ -38,6 +38,7 @@ typst-kit = { version = "=0.15.1", features = [
     "system-downloader",
 ] }
 base64 = "0.22"
+typst-ide = "=0.15.1"
 
 [dev-dependencies]
 tempfile = "3"

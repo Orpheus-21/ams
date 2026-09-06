@@ -2,10 +2,12 @@
 //! (never shells out to a CLI) so its own memoization carries incremental
 //! recompilation across edits. See `SPEC.md`'s Tech Stack section.
 
+mod complete;
 mod fonts;
 mod session;
 mod world;
 
+pub use complete::{completions_at, CompletionItem, Completions};
 pub use session::CompileSession;
 pub use world::AmsWorld;
 

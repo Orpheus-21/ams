@@ -3,6 +3,7 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { typst_lezer } from "codemirror-lang-typst/lezer";
 
 import { editorAppearance } from "./theme";
+import { typstAutocomplete } from "./complete";
 
 // ponytail: codemirror-lang-typst's Lezer parser re-parses the *entire*
 // document on every edit (its fragment-reuse path only fires when nothing at
@@ -56,6 +57,7 @@ export function mountEditor(
         basicSetup,
         // After basicSetup so it overrides the default highlight style.
         editorAppearance,
+        typstAutocomplete,
         language.of(languageExtension(countLines(initialContent))),
         languageSizeGuard,
         ...(onChange ? [changeNotifier] : []),
