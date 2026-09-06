@@ -127,3 +127,8 @@ body {
 .shortcut-list dd {
   margin: 0;
 }
+
+.diagnostic-hint {
+  padding-left: 12px;
+  opacity: 0.85;
+}

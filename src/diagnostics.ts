@@ -37,6 +37,16 @@ export function showDiagnostics(diagnostics: Diagnostic[]): void {
       }
 
       row.append(diagnostic.message);
+
+      // Typst's hints are usually the part that actually tells someone new to
+      // the language what to do about the error.
+      for (const hint of diagnostic.hints) {
+        const line = document.createElement("div");
+        line.className = "diagnostic-hint";
+        line.textContent = `hint: ${hint}`;
+        row.append(line);
+      }
+
       return row;
     }),
   );
@@ -45,7 +55,7 @@ export function showDiagnostics(diagnostics: Diagnostic[]): void {
 /// Reports a failure of the compile call itself (IPC/backend), as opposed to
 /// a Typst diagnostic about the document.
 export function showFailure(message: string): void {
-  showDiagnostics([{ severity: "error", message, line: null, column: null }]);
+  showDiagnostics([{ severity: "error", message, line: null, column: null, hints: [] }]);
 }
 
 export function clearDiagnostics(): void {

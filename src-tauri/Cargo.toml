@@ -27,7 +27,16 @@ serde_json = "1"
 typst = "=0.15.1"
 typst-layout = "=0.15.1"
 typst-render = "=0.15.1"
-typst-kit = { version = "=0.15.1", features = ["embedded-fonts", "datetime"] }
+typst-kit = { version = "=0.15.1", features = [
+    "embedded-fonts",
+    "datetime",
+    # Resolves `#import "@preview/..."` from the same places the Typst CLI
+    # looks, downloading from Universe when it isn't cached yet. The downloader
+    # pulls in openssl on Linux only; Windows and macOS use the platform TLS
+    # stack, so this doesn't complicate the Windows build.
+    "system-packages",
+    "system-downloader",
+] }
 base64 = "0.22"
 
 [dev-dependencies]

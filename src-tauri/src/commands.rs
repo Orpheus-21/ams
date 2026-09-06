@@ -82,6 +82,8 @@ pub struct Diagnostic {
     /// into a sibling file rather than the open document.
     pub line: Option<usize>,
     pub column: Option<usize>,
+    /// Typst's own suggestions for fixing the problem.
+    pub hints: Vec<String>,
 }
 
 /// Render resolution bounds. 4 px/pt is already well past retina for a page
@@ -102,7 +104,16 @@ fn diagnostics_of(
                 Some((line, column)) => (Some(line), Some(column)),
                 None => (None, None),
             };
-            Diagnostic { severity, message: d.message.to_string(), line, column }
+            Diagnostic {
+                severity,
+                message: d.message.to_string(),
+                line,
+                column,
+                // Typst's hints are the genuinely instructive half of a
+                // diagnostic ("hint: use #set before the first content") and
+                // are exactly what a user new to the language needs.
+                hints: d.hints.iter().map(|hint| hint.v.to_string()).collect(),
+            }
         })
         .collect()
 }

@@ -15,6 +15,8 @@ export interface Diagnostic {
   /// 1-based, null when the diagnostic doesn't point into the open document.
   line: number | null;
   column: number | null;
+  /// Typst's own suggestions for fixing the problem.
+  hints: string[];
 }
 
 export interface PageInfo {

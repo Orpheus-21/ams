@@ -15,24 +15,32 @@ use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World, WorldExt};
 use typst_kit::datetime::Time;
+use typst_kit::downloader::SystemDownloader;
 use typst_kit::files::{FileLoader, FileStore, FsRoot};
 use typst_kit::fonts::FontStore;
+use typst_kit::packages::SystemPackages;
 
 use super::fonts::default_fonts;
 
-/// Loads sibling files (images, `.bib` files, ...) relative to the
-/// document's directory. Package imports (`#import "@preview/..."`) are not
-/// yet supported by this engine.
+/// Loads sibling files (images, `.bib` files, ...) relative to the document's
+/// directory, and resolves `#import "@preview/..."` packages.
+///
+/// Packages come from the same places the Typst CLI looks — the system data
+/// directory, then the local cache, then Typst Universe — so a package already
+/// downloaded by the CLI is reused, and anything fetched here is cached for
+/// next time. Only the first use of a package needs the network.
 struct DocFileLoader {
     project: FsRoot,
+    packages: SystemPackages,
 }
 
 impl FileLoader for DocFileLoader {
     fn load(&self, id: FileId) -> FileResult<Bytes> {
         match id.root() {
             VirtualRoot::Project => self.project.load(id.vpath()),
-            VirtualRoot::Package(_) => {
-                Err(FileError::Other(Some("package imports are not supported".into())))
+            VirtualRoot::Package(spec) => {
+                let root = self.packages.obtain(spec).map_err(FileError::Package)?;
+                root.load(id.vpath())
             }
         }
     }
@@ -67,7 +75,13 @@ impl AmsWorld {
         Self {
             library: LazyHash::new(Library::default()),
             fonts: default_fonts(),
-            files: FileStore::new(DocFileLoader { project: FsRoot::new(root) }),
+            files: FileStore::new(DocFileLoader {
+                project: FsRoot::new(root),
+                packages: SystemPackages::new(SystemDownloader::new(format!(
+                    "ams/{}",
+                    env!("CARGO_PKG_VERSION")
+                ))),
+            }),
             main_id,
             main_source: Source::new(main_id, text.into()),
             time: Time::system(),
