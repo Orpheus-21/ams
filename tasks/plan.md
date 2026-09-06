@@ -111,8 +111,8 @@ README does not help someone who has already double-clicked the app. See Task 15
 
 ### Phase 4: Keyboard-First Pass + Minimum Usable UI
 
-- [ ] Task 12: Full keyboard shortcut coverage + focus management
-- [ ] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
+- [x] Task 12: Full keyboard shortcut coverage + focus management
+- [x] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
 
 ### Checkpoint: Keyboard-First
 - [ ] Manual keyboard-only walkthrough: new, open, edit, save, undo/redo, switch editor↔preview

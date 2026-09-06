@@ -50,8 +50,8 @@ This file is the checklist `/build` and future sessions track progress against.
 
 ## Phase 4: Keyboard-First Pass
 
-- [ ] Task 12: Full keyboard shortcut coverage + focus management
-- [ ] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
+- [x] Task 12: Full keyboard shortcut coverage + focus management
+- [x] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
 
 ### Checkpoint: Keyboard-First
 - [ ] Manual keyboard-only walkthrough passes, no mouse
