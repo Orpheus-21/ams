@@ -13,6 +13,8 @@ export interface PageGeometry {
 
 export interface PreviewController {
   setPages(pages: PageGeometry[]): void;
+  /// Scrolls so the given point on a page is visible, without stealing focus.
+  revealPoint(page: number, yPt: number): void;
   /// Multiplies page size on screen. Pages re-render at the matching
   /// resolution so zooming in sharpens rather than upscales a blurry bitmap.
   setZoom(zoom: number): void;
@@ -172,6 +174,18 @@ export function mountPreview(
 
   return {
     setPages,
+    revealPoint(page: number, yPt: number) {
+      const wrapper = wrappers[page];
+      if (!wrapper) return;
+      // Only scroll when the spot isn't already on screen: following the
+      // cursor should be invisible while you type inside one page, not a
+      // pane that twitches on every keystroke.
+      const target = wrapper.offsetTop + yPt * zoom;
+      const top = container.scrollTop;
+      const bottom = top + container.clientHeight;
+      if (target > top + 40 && target < bottom - 40) return;
+      container.scrollTo({ top: Math.max(0, target - container.clientHeight / 3) });
+    },
     setZoom(next: number) {
       fitToWidth = false;
       applyZoom(next);

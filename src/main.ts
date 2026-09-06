@@ -3,7 +3,14 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 
 import { mountEditor, getContent, setContent, focusEditor, revealOffset } from "./editor/setup";
-import { newDocument, openDocument, saveDocument, compileDocument, jumpToSource } from "./commands";
+import {
+  newDocument,
+  openDocument,
+  saveDocument,
+  compileDocument,
+  jumpToSource,
+  previewPosition,
+} from "./commands";
 import { mountPreview, type PreviewController } from "./preview/viewport";
 import { mountDiagnostics, showDiagnostics, showFailure } from "./diagnostics";
 import { mountSplitter } from "./split";
@@ -11,6 +18,7 @@ import { mountShortcuts, toggleShortcuts, hideShortcuts } from "./shortcuts";
 
 const COMPILE_DEBOUNCE_MS = 120;
 const ZOOM_STEP = 1.25;
+const FOLLOW_DEBOUNCE_MS = 250;
 
 let preview: PreviewController | null = null;
 let previewPane: HTMLElement | null = null;
@@ -66,6 +74,20 @@ async function compileNow(): Promise<void> {
   }
 }
 
+let followTimer: number | undefined;
+
+/// Scrolls the preview to wherever the cursor's text landed. Debounced, and
+/// deliberately separate from the compile debounce: the caret moves on arrow
+/// keys and clicks too, not only on edits.
+function followCursor(cursor: number): void {
+  window.clearTimeout(followTimer);
+  followTimer = window.setTimeout(() => {
+    void previewPosition(cursor).then((position) => {
+      if (position) preview?.revealPoint(position.page, position.y_pt);
+    });
+  }, FOLLOW_DEBOUNCE_MS);
+}
+
 function onEdit(): void {
   if (!dirty) {
     dirty = true;
@@ -92,6 +114,9 @@ async function doNew(): Promise<void> {
   await newDocument();
   setContent("");
   markClean(null);
+  // setContent already scheduled a debounced compile; cancel it so this
+  // doesn't compile the same document twice.
+  window.clearTimeout(debounceTimer);
   await compileNow();
 }
 
@@ -101,6 +126,7 @@ async function doOpen(): Promise<void> {
   if (!doc) return;
   setContent(doc.text);
   markClean(doc.path);
+  window.clearTimeout(debounceTimer);
   await compileNow();
 }
 
@@ -153,7 +179,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (divider) mountSplitter(divider);
 
   const editorContainer = document.querySelector<HTMLElement>("#editor");
-  if (editorContainer) mountEditor(editorContainer, { onChange: onEdit });
+  if (editorContainer) mountEditor(editorContainer, { onChange: onEdit, onCursorMove: followCursor });
 
   refreshTitle();
   focusEditor();

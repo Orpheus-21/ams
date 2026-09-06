@@ -49,6 +49,16 @@ export function jumpToSource(page: number, xPt: number, yPt: number): Promise<nu
   return invoke("jump_to_source", { page, xPt, yPt });
 }
 
+export interface PreviewPosition {
+  page: number;
+  y_pt: number;
+}
+
+/// Where the cursor's text sits in the preview, so the preview can follow it.
+export function previewPosition(cursor: number): Promise<PreviewPosition | null> {
+  return invoke("preview_position", { cursor });
+}
+
 export function compileDocument(text: string): Promise<CompileResult> {
   return invoke("compile_document", { text });
 }

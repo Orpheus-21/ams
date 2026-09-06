@@ -9,7 +9,7 @@ use typst::layout::Point;
 use typst_ide::Jump;
 use typst_layout::PagedDocument;
 
-use super::complete::byte_to_utf16;
+use super::complete::{byte_to_utf16, utf16_to_byte};
 use super::world::AmsWorld;
 
 /// Where in the source a click on the preview landed, as a UTF-16 offset.
@@ -35,6 +35,25 @@ pub fn jump_from_preview(
         // cursor to in the document the user is editing.
         _ => None,
     }
+}
+
+/// Where the cursor's text currently sits in the laid-out document.
+///
+/// The other half of the pair: clicking the preview moves the cursor, and this
+/// lets the preview follow the cursor, so the two panes stop drifting apart on
+/// a long document. Returns a 0-based page index and the y position in points,
+/// or `None` when the cursor isn't in text that reached the page (inside a
+/// `#let` body, a comment, or content that didn't render).
+pub fn preview_position_of_cursor(
+    world: &AmsWorld,
+    document: &PagedDocument,
+    cursor: usize,
+) -> Option<(usize, f64)> {
+    let source = world.main_source();
+    let byte_cursor = utf16_to_byte(source.text(), cursor);
+
+    let position = typst_ide::jump_from_cursor(document, source, byte_cursor).into_iter().next()?;
+    Some((position.page.get() - 1, position.point.y.to_pt()))
 }
 
 #[cfg(test)]
@@ -70,6 +89,34 @@ mod tests {
             "expected an offset within {paragraph:?}, got {offset} ({:?})",
             &source[offset..(offset + 10).min(source.len())]
         );
+    }
+
+    #[test]
+    fn the_preview_position_follows_the_cursor_onto_the_right_page() {
+        // Enough content to spill onto a second page, so "which page" is a
+        // real question rather than always page one.
+        let source = "First page text.\n\n#pagebreak()\n\nSecond page text.";
+        let world = AmsWorld::detached(source);
+        let document = compile(&world).expect("compiles").document;
+        assert_eq!(document.pages().len(), 2);
+
+        let cursor = source.find("Second").expect("marker exists") + 2;
+        let (page, y_pt) = preview_position_of_cursor(&world, &document, cursor)
+            .expect("cursor sits in text that reached the page");
+
+        assert_eq!(page, 1, "text after the page break belongs to the second page");
+        assert!(y_pt > 0.0, "position should be somewhere down the page");
+    }
+
+    #[test]
+    fn a_cursor_outside_rendered_text_reports_no_position() {
+        let source = "#let unused = 5\n\nBody.";
+        let world = AmsWorld::detached(source);
+        let document = compile(&world).expect("compiles").document;
+
+        // Inside the `#let` binding, which never reaches the page.
+        let cursor = source.find("unused").expect("marker exists") + 2;
+        assert_eq!(preview_position_of_cursor(&world, &document, cursor), None);
     }
 
     #[test]

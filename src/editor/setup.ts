@@ -42,12 +42,19 @@ let view: EditorView | null = null;
 
 export function mountEditor(
   parent: HTMLElement,
-  options: { initialContent?: string; onChange?: () => void } = {},
+  options: {
+    initialContent?: string;
+    onChange?: () => void;
+    onCursorMove?: (cursor: number) => void;
+  } = {},
 ): EditorView {
-  const { initialContent = "", onChange } = options;
+  const { initialContent = "", onChange, onCursorMove } = options;
 
   const changeNotifier = EditorView.updateListener.of((update) => {
     if (update.docChanged) onChange?.();
+    if (update.docChanged || update.selectionSet) {
+      onCursorMove?.(update.state.selection.main.head);
+    }
   });
 
   view = new EditorView({
@@ -60,7 +67,7 @@ export function mountEditor(
         typstAutocomplete,
         language.of(languageExtension(countLines(initialContent))),
         languageSizeGuard,
-        ...(onChange ? [changeNotifier] : []),
+        ...(onChange || onCursorMove ? [changeNotifier] : []),
       ],
     }),
     parent,

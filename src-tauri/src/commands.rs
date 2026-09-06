@@ -198,6 +198,21 @@ fn jump_at(state: &DocumentState, page: usize, x_pt: f64, y_pt: f64) -> Option<u
     inner.session.jump_from_preview(document, page, x_pt, y_pt)
 }
 
+#[derive(Serialize)]
+pub struct PreviewPosition {
+    pub page: usize,
+    pub y_pt: f64,
+}
+
+fn preview_position_at(state: &DocumentState, cursor: usize) -> Option<PreviewPosition> {
+    let inner = state.inner.lock().unwrap();
+    let document = inner.document.as_ref()?;
+    inner
+        .session
+        .preview_position_of_cursor(document, cursor)
+        .map(|(page, y_pt)| PreviewPosition { page, y_pt })
+}
+
 /// Rasterizes one page of the last successfully compiled document to PNG, at
 /// `pixel_per_pt` resolution. Never re-renders the whole document — the
 /// caller (the preview pane's viewport virtualization) decides which single
@@ -315,6 +330,20 @@ pub async fn jump_to_source(
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DocumentState>();
         jump_at(&state, page, x_pt, y_pt)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Where the cursor's text sits in the preview, so the preview can follow it.
+#[tauri::command]
+pub async fn preview_position(
+    app: AppHandle,
+    cursor: usize,
+) -> Result<Option<PreviewPosition>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<DocumentState>();
+        preview_position_at(&state, cursor)
     })
     .await
     .map_err(|e| e.to_string())

@@ -66,6 +66,15 @@ impl CompileSession {
         super::jump_from_preview(&self.world, document, page, x_pt, y_pt)
     }
 
+    /// See [`crate::compile::preview_position_of_cursor`].
+    pub fn preview_position_of_cursor(
+        &self,
+        document: &PagedDocument,
+        cursor: usize,
+    ) -> Option<(usize, f64)> {
+        super::preview_position_of_cursor(&self.world, document, cursor)
+    }
+
     /// 1-based line and column of a diagnostic in the current text. See
     /// [`AmsWorld::location_of`].
     pub fn location_of(&self, span: DiagSpan) -> Option<(usize, usize)> {

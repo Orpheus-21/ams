@@ -9,7 +9,7 @@ mod session;
 mod world;
 
 pub use complete::{completions_at, CompletionItem, Completions};
-pub use jump::jump_from_preview;
+pub use jump::{jump_from_preview, preview_position_of_cursor};
 pub use session::CompileSession;
 pub use world::AmsWorld;
 

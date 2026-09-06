@@ -29,7 +29,8 @@ Type Typst markup. The preview updates about 120ms after you stop.
 Everything is on the menu bar, with its shortcut next to it. `F1` lists them.
 
 Typing `#` offers completions from the compiler itself, with descriptions. Clicking anywhere
-on a page jumps the cursor to the source that produced it.
+on a page jumps the cursor to the source that produced it, and the preview follows the cursor
+as you move around.
 
 Documents are plain `.typ` files. Images and `.bib` files are resolved relative to the
 document, so put them in the same folder — use your file manager, ams has no file browser.
