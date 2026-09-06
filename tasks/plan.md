@@ -147,13 +147,11 @@ clamp, `withGlobalTauri`). These were deliberately left open:
    Re-running the 100ms budget against the realistic 866 KB source — which exercises parsing
    properly, unlike the `#lorem` fixture — gives **~48 ms**, so a book-length document lands
    at roughly half the budget end to end. Both numbers are now regression-guarded.
-3. **The compile holds the document mutex for its whole duration**, so `save_document` and
+3. ~~**New/Open compile twice**~~ — fixed: the pending debounced compile is cancelled first.
+4. **The compile holds the document mutex for its whole duration**, so `save_document` and
    `render_page` queue behind an in-flight compile. Fine at current speeds; would show up as
    a delayed save on a large cold compile.
-4. **New/Open compile twice** — `setContent` triggers the debounced compile *and* the
-   handler calls `compileNow()` directly. Harmless, wasteful.
-5. **Diagnostics show no line numbers**, though Typst gives spans. The single biggest
-   usability gap in the error bar for the target user.
+5. ~~**Diagnostics show no line numbers**~~ — fixed, and they now carry Typst's hints too.
 
 ### Phase 6: Make it look good
 
