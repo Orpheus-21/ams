@@ -198,12 +198,13 @@ pub async fn open_document(app: AppHandle) -> Result<Option<OpenedDocument>, Str
 }
 
 /// Saves to the document's current path, or shows a native "Save As" dialog
-/// first if it doesn't have one yet. Returns the path saved to.
+/// first if it doesn't have one yet. `save_as` forces the dialog even when the
+/// document already has a path. Returns the path saved to.
 #[tauri::command]
-pub async fn save_document(app: AppHandle, text: String) -> Result<String, String> {
+pub async fn save_document(app: AppHandle, text: String, save_as: bool) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DocumentState>();
-        let path = match current_path(&state) {
+        let path = match current_path(&state).filter(|_| !save_as) {
             Some(p) => p,
             None => {
                 let picked = app.dialog().file().add_filter("Typst", &["typ"]).blocking_save_file();

@@ -1,14 +1,43 @@
-import { mountEditor, getContent, setContent } from "./editor/setup";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ask } from "@tauri-apps/plugin-dialog";
+
+import { mountEditor, getContent, setContent, focusEditor } from "./editor/setup";
 import { newDocument, openDocument, saveDocument, compileDocument } from "./commands";
 import { mountPreview, type PreviewController } from "./preview/viewport";
 import { mountDiagnostics, showDiagnostics, showFailure } from "./diagnostics";
+import { mountSplitter } from "./split";
+import { mountShortcuts, toggleShortcuts, hideShortcuts } from "./shortcuts";
 
 const COMPILE_DEBOUNCE_MS = 120;
+const ZOOM_STEP = 1.25;
 
 let preview: PreviewController | null = null;
+let previewPane: HTMLElement | null = null;
+
 let debounceTimer: number | undefined;
 let compiling = false;
 let compileQueued = false;
+
+// Document identity, tracked here because the frontend owns the editor buffer:
+// the backend only learns the text when asked to compile or save.
+let currentPath: string | null = null;
+let dirty = false;
+
+function fileNameOf(path: string): string {
+  return path.split(/[\\/]/).pop() || path;
+}
+
+function refreshTitle(): void {
+  const name = currentPath ? fileNameOf(currentPath) : "Untitled";
+  void getCurrentWindow().setTitle(`${dirty ? "● " : ""}${name} — ams`);
+}
+
+function markClean(path: string | null): void {
+  currentPath = path;
+  dirty = false;
+  refreshTitle();
+}
 
 // Typing never waits on any of this: edits land in CodeMirror synchronously,
 // the compile runs on a background thread in Rust, and an edit arriving mid
@@ -37,41 +66,95 @@ async function compileNow(): Promise<void> {
   }
 }
 
-function scheduleCompile(): void {
+function onEdit(): void {
+  if (!dirty) {
+    dirty = true;
+    refreshTitle();
+  }
   window.clearTimeout(debounceTimer);
   debounceTimer = window.setTimeout(() => void compileNow(), COMPILE_DEBOUNCE_MS);
 }
 
-// Full shortcut coverage, menus, and focus management are Task 12.
-window.addEventListener("keydown", (event) => {
-  const mod = event.ctrlKey || event.metaKey;
-  if (!mod) return;
+/// Guards the two actions that throw away the buffer. Without this, Ctrl+N on
+/// an unsaved document silently destroys it.
+async function confirmDiscard(action: string): Promise<boolean> {
+  if (!dirty) return true;
+  return ask(`You have unsaved changes. ${action} anyway?`, {
+    title: "Unsaved changes",
+    kind: "warning",
+    okLabel: action,
+    cancelLabel: "Cancel",
+  });
+}
 
-  if (event.key === "n") {
-    event.preventDefault();
-    // setContent triggers the editor's change listener, which schedules the
-    // compile — so these only need to get the backend and editor in sync.
-    newDocument().then(() => setContent(""));
-  } else if (event.key === "o") {
-    event.preventDefault();
-    openDocument().then((doc) => {
-      if (doc) setContent(doc.text);
-    });
-  } else if (event.key === "s") {
-    event.preventDefault();
-    saveDocument(getContent()).catch((err) => showFailure(String(err)));
+async function doNew(): Promise<void> {
+  if (!(await confirmDiscard("Discard and start a new document"))) return;
+  await newDocument();
+  setContent("");
+  markClean(null);
+  await compileNow();
+}
+
+async function doOpen(): Promise<void> {
+  if (!(await confirmDiscard("Discard and open another document"))) return;
+  const doc = await openDocument();
+  if (!doc) return;
+  setContent(doc.text);
+  markClean(doc.path);
+  await compileNow();
+}
+
+async function doSave(saveAs: boolean): Promise<void> {
+  try {
+    const path = await saveDocument(getContent(), saveAs);
+    markClean(path);
+  } catch (err) {
+    // A cancelled save dialog reports as an error; that isn't worth alarming
+    // the user about.
+    const message = String(err);
+    if (!message.includes("cancelled")) showFailure(message);
   }
-});
+}
+
+const MENU_ACTIONS: Record<string, () => void> = {
+  new: () => void doNew(),
+  open: () => void doOpen(),
+  save: () => void doSave(false),
+  save_as: () => void doSave(true),
+  zoom_in: () => preview?.zoomBy(ZOOM_STEP),
+  zoom_out: () => preview?.zoomBy(1 / ZOOM_STEP),
+  zoom_reset: () => preview?.resetZoom(),
+  focus_editor: () => focusEditor(),
+  focus_preview: () => previewPane?.focus(),
+  shortcuts: () => toggleShortcuts(),
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   const diagnosticsBar = document.querySelector<HTMLElement>("#diagnostics");
   if (diagnosticsBar) mountDiagnostics(diagnosticsBar);
 
-  const previewContainer = document.querySelector<HTMLElement>("#preview");
-  if (previewContainer) preview = mountPreview(previewContainer);
+  const overlay = document.querySelector<HTMLElement>("#shortcuts");
+  if (overlay) mountShortcuts(overlay);
+
+  previewPane = document.querySelector<HTMLElement>("#preview");
+  if (previewPane) preview = mountPreview(previewPane);
+
+  const divider = document.querySelector<HTMLElement>("#divider");
+  if (divider) mountSplitter(divider);
 
   const editorContainer = document.querySelector<HTMLElement>("#editor");
-  if (editorContainer) mountEditor(editorContainer, { onChange: scheduleCompile });
+  if (editorContainer) mountEditor(editorContainer, { onChange: onEdit });
 
+  refreshTitle();
+  focusEditor();
   void compileNow();
+});
+
+// Menu items carry the shortcuts, so the accelerators are registered natively
+// rather than here. Escape is the exception: it belongs to the overlay, not
+// to any menu command.
+void listen<string>("menu", (event) => MENU_ACTIONS[event.payload]?.());
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && hideShortcuts()) event.preventDefault();
 });

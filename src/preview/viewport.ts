@@ -13,13 +13,25 @@ export interface PageGeometry {
 
 export interface PreviewController {
   setPages(pages: PageGeometry[]): void;
+  /// Multiplies page size on screen. Pages re-render at the matching
+  /// resolution so zooming in sharpens rather than upscales a blurry bitmap.
+  setZoom(zoom: number): void;
+  zoomBy(factor: number): void;
+  resetZoom(): void;
 }
+
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
 
 export function mountPreview(container: HTMLElement): PreviewController {
   const wrappers: HTMLDivElement[] = [];
   const visible = new Set<number>();
   const rendered = new Set<number>();
-  const pixelPerPt = window.devicePixelRatio || 1;
+  const devicePixels = window.devicePixelRatio || 1;
+
+  let geometry: PageGeometry[] = [];
+  let zoom = 1;
+  let pixelPerPt = devicePixels;
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -75,10 +87,8 @@ export function mountPreview(container: HTMLElement): PreviewController {
       wrappers.push(wrapper);
     }
 
-    pages.forEach((page, index) => {
-      wrappers[index].style.width = `${page.width_pt}px`;
-      wrappers[index].style.height = `${page.height_pt}px`;
-    });
+    geometry = pages;
+    applyGeometry();
 
     // The document changed, so every page's raster is stale — but only the
     // ones on screen are redrawn now. The rest re-render when scrolled to.
@@ -86,5 +96,33 @@ export function mountPreview(container: HTMLElement): PreviewController {
     for (const index of visible) renderIfNeeded(index);
   }
 
-  return { setPages };
+  function applyGeometry() {
+    geometry.forEach((page, index) => {
+      const wrapper = wrappers[index];
+      if (!wrapper) return;
+      wrapper.style.width = `${page.width_pt * zoom}px`;
+      wrapper.style.height = `${page.height_pt * zoom}px`;
+    });
+  }
+
+  function setZoom(next: number) {
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+    if (clamped === zoom) return;
+
+    zoom = clamped;
+    pixelPerPt = devicePixels * zoom;
+    applyGeometry();
+
+    // Existing bitmaps are now the wrong resolution for their box, so they get
+    // redrawn — but again only where the user can actually see them.
+    rendered.clear();
+    for (const index of visible) renderIfNeeded(index);
+  }
+
+  return {
+    setPages,
+    setZoom,
+    zoomBy: (factor: number) => setZoom(zoom * factor),
+    resetZoom: () => setZoom(1),
+  };
 }

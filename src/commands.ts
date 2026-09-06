@@ -33,8 +33,8 @@ export function openDocument(): Promise<OpenedDocument | null> {
   return invoke("open_document");
 }
 
-export function saveDocument(text: string): Promise<string> {
-  return invoke("save_document", { text });
+export function saveDocument(text: string, saveAs = false): Promise<string> {
+  return invoke("save_document", { text, saveAs });
 }
 
 export function compileDocument(text: string): Promise<CompileResult> {

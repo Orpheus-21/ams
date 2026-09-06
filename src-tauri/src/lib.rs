@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod compile;
+pub mod menu;
 
 use commands::DocumentState;
 
@@ -9,6 +10,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(DocumentState::default())
+        .menu(menu::build)
+        .on_menu_event(menu::forward)
         .invoke_handler(tauri::generate_handler![
             commands::new_document,
             commands::open_document,

@@ -62,6 +62,10 @@ export function mountEditor(
   return view;
 }
 
+export function focusEditor(): void {
+  view?.focus();
+}
+
 export function getContent(): string {
   if (!view) throw new Error("Editor not mounted");
   return view.state.doc.toString();
