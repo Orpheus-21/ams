@@ -14,6 +14,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ["Ctrl+1  /  Ctrl+2", "Focus editor / preview"],
   ["Ctrl+Z  /  Ctrl+Y", "Undo / redo"],
   ["Ctrl+F", "Find in document"],
+  ["Click a page", "Jump to the source that produced it"],
   ["F1", "Show this list"],
   ["Esc", "Close this list"],
 ];

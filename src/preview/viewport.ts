@@ -26,6 +26,7 @@ const MAX_ZOOM = 4;
 export function mountPreview(
   container: HTMLElement,
   onRenderError?: (message: string) => void,
+  onJump?: (page: number, xPt: number, yPt: number) => void,
 ): PreviewController {
   const wrappers: HTMLDivElement[] = [];
   const visible = new Set<number>();
@@ -115,6 +116,16 @@ export function mountPreview(
       wrapper.className = "preview-page";
       wrapper.dataset.pageIndex = String(index);
       wrapper.appendChild(document.createElement("canvas"));
+
+      // Clicking a page asks the compiler which source produced that spot, so
+      // the preview navigates the document instead of only displaying it.
+      // Coordinates go back as Typst points, undoing the zoom.
+      wrapper.addEventListener("click", (event) => {
+        if (!onJump) return;
+        const box = wrapper.getBoundingClientRect();
+        onJump(index, (event.clientX - box.left) / zoom, (event.clientY - box.top) / zoom);
+      });
+
       container.appendChild(wrapper);
       observer.observe(wrapper);
       wrappers.push(wrapper);

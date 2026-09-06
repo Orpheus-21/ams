@@ -192,6 +192,12 @@ fn complete_at(state: &DocumentState, text: &str, cursor: usize) -> Completions 
     session.completions(text, cursor, document.as_ref())
 }
 
+fn jump_at(state: &DocumentState, page: usize, x_pt: f64, y_pt: f64) -> Option<usize> {
+    let inner = state.inner.lock().unwrap();
+    let document = inner.document.as_ref()?;
+    inner.session.jump_from_preview(document, page, x_pt, y_pt)
+}
+
 /// Rasterizes one page of the last successfully compiled document to PNG, at
 /// `pixel_per_pt` resolution. Never re-renders the whole document — the
 /// caller (the preview pane's viewport virtualization) decides which single
@@ -292,6 +298,23 @@ pub async fn complete(app: AppHandle, text: String, cursor: usize) -> Result<Com
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DocumentState>();
         complete_at(&state, &text, cursor)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Where a click on the preview maps to in the source, as a UTF-16 offset.
+/// `None` when the click hits nothing that came from this document.
+#[tauri::command]
+pub async fn jump_to_source(
+    app: AppHandle,
+    page: usize,
+    x_pt: f64,
+    y_pt: f64,
+) -> Result<Option<usize>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<DocumentState>();
+        jump_at(&state, page, x_pt, y_pt)
     })
     .await
     .map_err(|e| e.to_string())

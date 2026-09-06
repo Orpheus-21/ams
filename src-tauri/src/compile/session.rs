@@ -55,6 +55,17 @@ impl CompileSession {
         completions_at(&self.world, document, cursor)
     }
 
+    /// See [`crate::compile::jump_from_preview`].
+    pub fn jump_from_preview(
+        &self,
+        document: &PagedDocument,
+        page: usize,
+        x_pt: f64,
+        y_pt: f64,
+    ) -> Option<usize> {
+        super::jump_from_preview(&self.world, document, page, x_pt, y_pt)
+    }
+
     /// 1-based line and column of a diagnostic in the current text. See
     /// [`AmsWorld::location_of`].
     pub fn location_of(&self, span: DiagSpan) -> Option<(usize, usize)> {

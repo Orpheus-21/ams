@@ -72,6 +72,17 @@ export function focusEditor(): void {
   view?.focus();
 }
 
+/// Puts the cursor at a UTF-16 offset and scrolls it into view.
+export function revealOffset(offset: number): void {
+  if (!view) return;
+  const position = Math.min(Math.max(offset, 0), view.state.doc.length);
+  view.dispatch({
+    selection: { anchor: position },
+    effects: EditorView.scrollIntoView(position, { y: "center" }),
+  });
+  view.focus();
+}
+
 export function getContent(): string {
   if (!view) throw new Error("Editor not mounted");
   return view.state.doc.toString();

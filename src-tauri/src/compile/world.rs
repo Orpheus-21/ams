@@ -100,6 +100,11 @@ impl AmsWorld {
         self.main_source.replace(text);
     }
 
+    /// The file id of the document being edited.
+    pub fn main_id(&self) -> FileId {
+        self.main_id
+    }
+
     /// The document's current source, for tooling that inspects it directly
     /// (completions) rather than going through the `World` trait.
     pub fn main_source(&self) -> &Source {

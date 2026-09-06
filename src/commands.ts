@@ -43,6 +43,12 @@ export function saveDocument(text: string, saveAs = false): Promise<string | nul
   return invoke("save_document", { text, saveAs });
 }
 
+/// Where a click on a preview page maps to in the source, as a UTF-16 offset.
+/// Null when the click hit nothing produced by this document.
+export function jumpToSource(page: number, xPt: number, yPt: number): Promise<number | null> {
+  return invoke("jump_to_source", { page, xPt, yPt });
+}
+
 export function compileDocument(text: string): Promise<CompileResult> {
   return invoke("compile_document", { text });
 }

@@ -2,8 +2,8 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 
-import { mountEditor, getContent, setContent, focusEditor } from "./editor/setup";
-import { newDocument, openDocument, saveDocument, compileDocument } from "./commands";
+import { mountEditor, getContent, setContent, focusEditor, revealOffset } from "./editor/setup";
+import { newDocument, openDocument, saveDocument, compileDocument, jumpToSource } from "./commands";
 import { mountPreview, type PreviewController } from "./preview/viewport";
 import { mountDiagnostics, showDiagnostics, showFailure } from "./diagnostics";
 import { mountSplitter } from "./split";
@@ -141,7 +141,13 @@ window.addEventListener("DOMContentLoaded", () => {
   if (overlay) mountShortcuts(overlay);
 
   previewPane = document.querySelector<HTMLElement>("#preview");
-  if (previewPane) preview = mountPreview(previewPane, showFailure);
+  if (previewPane) {
+    preview = mountPreview(previewPane, showFailure, (page, xPt, yPt) => {
+      void jumpToSource(page, xPt, yPt).then((offset) => {
+        if (offset !== null) revealOffset(offset);
+      });
+    });
+  }
 
   const divider = document.querySelector<HTMLElement>("#divider");
   if (divider) mountSplitter(divider);

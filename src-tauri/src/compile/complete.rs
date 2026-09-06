@@ -67,7 +67,7 @@ pub fn utf16_to_byte(text: &str, utf16_offset: usize) -> usize {
     text.len()
 }
 
-pub fn byte_to_utf16(text: &str, byte_offset: usize) -> usize {
+pub(super) fn byte_to_utf16(text: &str, byte_offset: usize) -> usize {
     text.get(..byte_offset).unwrap_or(text).encode_utf16().count()
 }
 

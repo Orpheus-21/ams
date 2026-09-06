@@ -98,6 +98,9 @@ body {
 
 .preview-page {
   position: relative;
+  /* Pages are clickable: a click jumps to the source that produced that
+     spot, so the cursor says so. */
+  cursor: pointer;
   background: var(--page);
   flex-shrink: 0;
   box-shadow:

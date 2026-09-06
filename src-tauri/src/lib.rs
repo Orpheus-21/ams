@@ -19,6 +19,7 @@ pub fn run() {
             commands::compile_document,
             commands::render_page,
             commands::complete,
+            commands::jump_to_source,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

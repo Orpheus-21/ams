@@ -4,10 +4,12 @@
 
 mod complete;
 mod fonts;
+mod jump;
 mod session;
 mod world;
 
 pub use complete::{completions_at, CompletionItem, Completions};
+pub use jump::jump_from_preview;
 pub use session::CompileSession;
 pub use world::AmsWorld;
 
