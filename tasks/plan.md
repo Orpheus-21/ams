@@ -148,6 +148,24 @@ clamp, `withGlobalTauri`). These were deliberately left open:
 5. **Diagnostics show no line numbers**, though Typst gives spans. The single biggest
    usability gap in the error bar for the target user.
 
+### Phase 6: Make it look good
+
+Raised by the founder after using the Windows build: *"no one wants to work on their documents
+that looks clunky."* This is not decoration. The app asks people to spend hours inside it writing
+things that matter to them, and it currently looks like a scaffold — default fonts, flat grey
+preview, a raw red error bar, no visual hierarchy anywhere. A document tool that looks unserious
+undermines trust in the documents it produces.
+
+Constraint that does not change: this is still a markup editor. Looking good means typography,
+spacing, colour and restraint — not a toolbar, not WYSIWYG.
+
+- [ ] Task 16: Visual design pass — editor and preview typography, a real colour system with
+      light/dark, page presentation in the preview (shadow, margins, page numbers), diagnostics
+      that read as part of the app rather than a browser error, focus and hover states, and an
+      empty state that tells a first-time user what to do
+- [ ] Task 17: Typst syntax highlighting theme that is legible and calm rather than the default
+      rainbow, matched to the app's palette
+
 ### Phase 5: Release Readiness
 
 - [x] Task 13: Finalize bundler config (icons, metadata, versioning, WebView2 bootstrapper)

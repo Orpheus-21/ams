@@ -57,6 +57,11 @@ This file is the checklist `/build` and future sessions track progress against.
 - [ ] Manual keyboard-only walkthrough passes, no mouse
 - [ ] Reviewed with human
 
+## Phase 6: Make it look good
+
+- [ ] Task 16: Visual design pass (typography, colour system, page presentation, states)
+- [ ] Task 17: Calm, legible Typst syntax highlighting theme
+
 ## Phase 5: Release Readiness
 
 - [x] Task 13: Finalize bundler config (icons, metadata, versioning, WebView2 bootstrapper)

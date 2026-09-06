@@ -40,7 +40,11 @@ handed to a friend cold, and they're productive without help.
   system fonts required and no network access. Exact font selection (open-license, redistributable,
   good defaults for a Word-alternative audience) is a Plan/Tasks-phase decision, not a spec-level
   one — flagging as a task, not deciding the specific typefaces here.
-- **Package registry access (`#import "@preview/..."`):** v1 requires internet access the first
+- **Package registry access (`#import "@preview/..."`):** implemented via typst-kit's
+  `SystemPackages`, resolving from the system data directory, then the local cache, then Typst
+  Universe — the same order the Typst CLI uses, so packages already fetched by the CLI are reused.
+  (This section previously described the behaviour while the code rejected every package import
+  outright; the code was fixed, not the spec.) v1 requires internet access the first
   time a document references a not-yet-cached package — same behavior as Typst's own CLI, which
   caches fetched packages to disk after first use, so a document that has already pulled its
   packages once continues to compile offline afterward. The core edit/compile/preview loop for
