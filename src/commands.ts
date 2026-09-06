@@ -33,7 +33,8 @@ export function openDocument(): Promise<OpenedDocument | null> {
   return invoke("open_document");
 }
 
-export function saveDocument(text: string, saveAs = false): Promise<string> {
+/// Resolves to the saved path, or null if the user cancelled the dialog.
+export function saveDocument(text: string, saveAs = false): Promise<string | null> {
   return invoke("save_document", { text, saveAs });
 }
 

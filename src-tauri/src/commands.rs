@@ -77,6 +77,12 @@ pub struct Diagnostic {
     pub message: String,
 }
 
+/// Render resolution bounds. 4 px/pt is already well past retina for a page
+/// on screen (~2 device pixels per point at 2x zoom); beyond that the pixmap
+/// grows quadratically for no visible gain.
+const MIN_PIXEL_PER_PT: f32 = 0.1;
+const MAX_PIXEL_PER_PT: f32 = 4.0;
+
 fn error_diagnostics(err: &CompileError) -> Vec<Diagnostic> {
     err.0.iter().map(|d| Diagnostic { severity: "error", message: d.message.to_string() }).collect()
 }
@@ -157,6 +163,11 @@ fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
 /// caller (the preview pane's viewport virtualization) decides which single
 /// page it currently needs.
 fn render_page_at(state: &DocumentState, index: usize, pixel_per_pt: f32) -> Result<RenderedPage, String> {
+    // The resolution comes from the frontend (zoom x device pixel ratio), so
+    // it gets clamped here rather than trusted: an A4 page at 8 px/pt is a
+    // ~32 megapixel, ~128 MB pixmap, and zooming is a held keystroke away.
+    let pixel_per_pt = pixel_per_pt.clamp(MIN_PIXEL_PER_PT, MAX_PIXEL_PER_PT);
+
     let inner = state.inner.lock().unwrap();
     let document = inner.document.as_ref().ok_or("no compiled document to render")?;
     let page = document.pages().get(index).ok_or_else(|| format!("page index {index} out of range"))?;
@@ -199,20 +210,31 @@ pub async fn open_document(app: AppHandle) -> Result<Option<OpenedDocument>, Str
 
 /// Saves to the document's current path, or shows a native "Save As" dialog
 /// first if it doesn't have one yet. `save_as` forces the dialog even when the
-/// document already has a path. Returns the path saved to.
+/// document already has a path.
+///
+/// Returns the path saved to, or `None` if the user cancelled the dialog —
+/// matching [`open_document`], so cancelling is never an error the frontend
+/// has to recognise by its message text.
 #[tauri::command]
-pub async fn save_document(app: AppHandle, text: String, save_as: bool) -> Result<String, String> {
+pub async fn save_document(
+    app: AppHandle,
+    text: String,
+    save_as: bool,
+) -> Result<Option<String>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DocumentState>();
         let path = match current_path(&state).filter(|_| !save_as) {
             Some(p) => p,
             None => {
-                let picked = app.dialog().file().add_filter("Typst", &["typ"]).blocking_save_file();
-                let picked = picked.ok_or_else(|| "save cancelled".to_string())?;
+                let Some(picked) =
+                    app.dialog().file().add_filter("Typst", &["typ"]).blocking_save_file()
+                else {
+                    return Ok(None);
+                };
                 picked.into_path().map_err(|e| e.to_string())?
             }
         };
-        save_at(&state, path, text)
+        save_at(&state, path, text).map(Some)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -321,6 +343,21 @@ mod tests {
         assert!(!rendered.png_base64.is_empty());
         let png_bytes = base64::engine::general_purpose::STANDARD.decode(&rendered.png_base64).unwrap();
         assert_eq!(&png_bytes[..8], b"\x89PNG\r\n\x1a\n", "should be a real PNG");
+    }
+
+    #[test]
+    fn render_resolution_is_clamped_so_the_frontend_cannot_ask_for_a_huge_pixmap() {
+        let state = DocumentState::default();
+        compile_at(&state, "= Hello");
+
+        let sane = render_page_at(&state, 0, MAX_PIXEL_PER_PT).expect("render at the cap");
+        let absurd = render_page_at(&state, 0, 100.0).expect("render above the cap");
+
+        assert_eq!(
+            (absurd.width, absurd.height),
+            (sane.width, sane.height),
+            "a request above the cap must render at the cap, not allocate a huge pixmap"
+        );
     }
 
     #[test]

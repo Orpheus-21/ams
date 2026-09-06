@@ -105,14 +105,18 @@ async function doOpen(): Promise<void> {
 }
 
 async function doSave(saveAs: boolean): Promise<void> {
+  // The text is captured before the await so that what gets marked clean is
+  // exactly what was written, not whatever the buffer holds once the save
+  // returns.
+  const saved = getContent();
   try {
-    const path = await saveDocument(getContent(), saveAs);
-    markClean(path);
+    const path = await saveDocument(saved, saveAs);
+    if (path === null) return; // cancelled, not a failure
+    if (getContent() === saved) markClean(path);
+    else currentPath = path; // edited mid-save: keep the path, stay dirty
+    refreshTitle();
   } catch (err) {
-    // A cancelled save dialog reports as an error; that isn't worth alarming
-    // the user about.
-    const message = String(err);
-    if (!message.includes("cancelled")) showFailure(message);
+    showFailure(String(err));
   }
 }
 
