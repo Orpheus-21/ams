@@ -126,14 +126,11 @@ README does not help someone who has already double-clicked the app. See Task 15
 Three findings were fixed in the review commit (cancel signalling, render-resolution
 clamp, `withGlobalTauri`). These were deliberately left open:
 
-1. **No Content Security Policy** (`csp: null`). The actual XSS surface today is close to
-   nil — no untrusted HTML is rendered anywhere, diagnostics go through `textContent`, the
-   preview is canvas — so this is hardening, not an open hole. It is *not* fixed because a
-   wrong CSP breaks the app at runtime and the protocol scheme differs between Windows
-   (`http://tauri.localhost`) and Linux (`tauri://localhost`); shipping one I can only test
-   on Linux risks a blank window on the platform that matters most. Proposed value, to be
-   enabled and verified on Windows in one go:
-   `default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'`.
+1. ~~**No Content Security Policy**~~ — now set. Verified on Linux by running the app: the
+   compile round-trip, the blob→canvas render path and CodeMirror's injected styles all
+   survive it. **Still needs one check on Windows**, because the protocol scheme differs
+   (`http://tauri.localhost` vs `tauri://localhost`); if the window comes up blank there, the
+   CSP is the first thing to suspect and reverting it is a one-line config change.
 2. ~~**The 100ms benchmark measures a layer below where the user feels it.**~~ **Measured;
    not a problem.** `tests/benchmark_round_trip.rs` now quantifies it, and doing so corrected
    two of my own assumptions:

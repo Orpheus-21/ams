@@ -1,0 +1,109 @@
+name: Release
+
+# Actions artifacts expire after 90 days, which makes them a bad way to hand
+# someone an installer. Pushing a `v*` tag publishes the same installers to a
+# GitHub Release, where the links are permanent and older versions stay
+# downloadable — the only rollback a desktop app has, since there is no server
+# to revert.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  # A tag that disagrees with Cargo.toml would publish "v0.2.0" containing
+  # ams_0.1.0_x64-setup.exe. Cheap to check, confusing forever if it slips
+  # through. Creating the release here rather than in the build matrix also
+  # avoids two platforms racing to create the same one.
+  prepare:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag must match the version in Cargo.toml
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          crate=$(grep -m1 '^version = ' src-tauri/Cargo.toml | cut -d'"' -f2)
+          echo "tag=$tag crate=$crate"
+          if [ "$tag" != "$crate" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $crate"
+            exit 1
+          fi
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && exit 0
+          gh release create "$GITHUB_REF_NAME" \
+            --title "ams $GITHUB_REF_NAME" \
+            --draft \
+            --notes "Download an installer below.
+
+          **Windows**: run \`ams_${GITHUB_REF_NAME#v}_x64-setup.exe\`. Windows will warn that
+          it is unsigned — *More info → Run anyway*. Installs per-user, no admin prompt.
+
+          **Linux**: \`chmod +x\` the AppImage and run it."
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: msi,nsis
+            glob: 'src-tauri/target/release/bundle/{msi/*.msi,nsis/*.exe}'
+          - os: ubuntu-22.04
+            bundles: appimage
+            glob: 'src-tauri/target/release/bundle/appimage/*.AppImage'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential curl wget file \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev librsvg2-dev patchelf
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # SPEC.md's boundaries forbid shipping with the large-document benchmark
+      # failing or skipped, so a release runs the suite rather than trusting
+      # that CI passed on some earlier commit.
+      - name: Tests
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml
+
+      - run: pnpm tauri build --bundles ${{ matrix.bundles }}
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+
+      - name: Attach installers to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob globstar extglob
+          files=(${{ matrix.glob }})
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no installers matched ${{ matrix.glob }}"
+            exit 1
+          fi
+          printf 'uploading %s\n' "${files[@]}"
+          gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber

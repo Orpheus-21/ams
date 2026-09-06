@@ -10,8 +10,10 @@ aren't.
 
 Windows and Linux. No macOS build.
 
-Grab an installer from the [latest build](https://github.com/Orpheus-21/ams/actions):
-open the newest green run, download `ams-windows` or `ams-linux` from Artifacts.
+Grab an installer from the [latest release](https://github.com/Orpheus-21/ams/releases).
+
+(Untagged builds are also on the [Actions](https://github.com/Orpheus-21/ams/actions) tab, but
+those artifacts expire after 90 days and need a GitHub login.)
 
 - **Windows**: unzip, run `ams_x.y.z_x64-setup.exe`. Windows will say *"Windows protected
   your PC"* because the installer isn't code-signed — More info → Run anyway. Installs
