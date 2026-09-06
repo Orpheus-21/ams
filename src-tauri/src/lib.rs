@@ -1,8 +1,9 @@
 pub mod commands;
 pub mod compile;
+pub mod document;
 pub mod menu;
 
-use commands::DocumentState;
+use document::DocumentState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

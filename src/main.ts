@@ -15,6 +15,7 @@ import { mountPreview, type PreviewController } from "./preview/viewport";
 import { mountDiagnostics, showDiagnostics, showFailure } from "./diagnostics";
 import { mountSplitter } from "./split";
 import { mountShortcuts, toggleShortcuts, hideShortcuts } from "./shortcuts";
+import { debounce } from "./debounce";
 
 const COMPILE_DEBOUNCE_MS = 120;
 const ZOOM_STEP = 1.25;
@@ -23,7 +24,6 @@ const FOLLOW_DEBOUNCE_MS = 250;
 let preview: PreviewController | null = null;
 let previewPane: HTMLElement | null = null;
 
-let debounceTimer: number | undefined;
 let compiling = false;
 let compileQueued = false;
 
@@ -74,18 +74,23 @@ async function compileNow(): Promise<void> {
   }
 }
 
-let followTimer: number | undefined;
+const scheduleCompile = debounce(() => void compileNow(), COMPILE_DEBOUNCE_MS);
 
-/// Scrolls the preview to wherever the cursor's text landed. Debounced, and
-/// deliberately separate from the compile debounce: the caret moves on arrow
-/// keys and clicks too, not only on edits.
+/// Where the caret last was, for the follow-the-cursor debounce.
+let pendingCursor = 0;
+
+/// Scrolls the preview to wherever the cursor's text landed. Deliberately on
+/// its own debounce, separate from compiling: the caret moves on arrow keys
+/// and clicks too, not only on edits.
+const scheduleFollow = debounce(() => {
+  void previewPosition(pendingCursor).then((position) => {
+    if (position) preview?.revealPoint(position.page, position.y_pt);
+  });
+}, FOLLOW_DEBOUNCE_MS);
+
 function followCursor(cursor: number): void {
-  window.clearTimeout(followTimer);
-  followTimer = window.setTimeout(() => {
-    void previewPosition(cursor).then((position) => {
-      if (position) preview?.revealPoint(position.page, position.y_pt);
-    });
-  }, FOLLOW_DEBOUNCE_MS);
+  pendingCursor = cursor;
+  scheduleFollow();
 }
 
 function onEdit(): void {
@@ -93,8 +98,7 @@ function onEdit(): void {
     dirty = true;
     refreshTitle();
   }
-  window.clearTimeout(debounceTimer);
-  debounceTimer = window.setTimeout(() => void compileNow(), COMPILE_DEBOUNCE_MS);
+  scheduleCompile();
 }
 
 /// Guards the two actions that throw away the buffer. Without this, Ctrl+N on
@@ -114,10 +118,9 @@ async function doNew(): Promise<void> {
   await newDocument();
   setContent("");
   markClean(null);
-  // setContent already scheduled a debounced compile; cancel it so this
-  // doesn't compile the same document twice.
-  window.clearTimeout(debounceTimer);
-  await compileNow();
+  // setContent already scheduled a compile; `now` replaces it rather than
+  // letting both run.
+  scheduleCompile.now();
 }
 
 async function doOpen(): Promise<void> {
@@ -126,8 +129,7 @@ async function doOpen(): Promise<void> {
   if (!doc) return;
   setContent(doc.text);
   markClean(doc.path);
-  window.clearTimeout(debounceTimer);
-  await compileNow();
+  scheduleCompile.now();
 }
 
 async function doSave(saveAs: boolean): Promise<void> {
@@ -183,7 +185,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   refreshTitle();
   focusEditor();
-  void compileNow();
+  scheduleCompile.now();
 });
 
 // Menu items carry the shortcuts, so the accelerators are registered natively
