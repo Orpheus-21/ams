@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ams",
-  "version": "0.1.0",
   "identifier": "com.orpheus21.ams",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -14,8 +13,10 @@
     "windows": [
       {
         "title": "ams",
-        "width": 800,
-        "height": 600
+        "width": 1280,
+        "height": 820,
+        "minWidth": 640,
+        "minHeight": 480
       }
     ],
     "security": {
@@ -24,13 +25,26 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi", "appimage"],
+    "publisher": "Orpheus-21",
+    "copyright": "Copyright (C) 2026 Orpheus-21",
+    "license": "GPL-3.0-or-later",
+    "licenseFile": "../LICENSE",
+    "category": "Productivity",
+    "shortDescription": "A fast, keyboard-first Typst editor",
+    "longDescription": "ams is a native desktop app for writing Typst documents: markup on one side, an instantly live-rendered preview on the other. It exists so that people who write everyday documents can use Typst without a terminal, an editor extension, or any configuration.",
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
   }
 }

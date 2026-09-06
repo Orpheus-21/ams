@@ -8,6 +8,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  # SPEC.md makes "tests, clippy and tsc pass in CI" a v1 criterion, and its
+  # boundaries forbid shipping with the large-document benchmark failing or
+  # skipped. That only means anything if CI actually runs them.
+  checks:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential curl wget file \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev librsvg2-dev patchelf
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck frontend
+        run: pnpm exec tsc --noEmit
+
+      - name: Clippy
+        run: cargo clippy --workspace --manifest-path src-tauri/Cargo.toml -- -D warnings
+
+      - name: Tests (includes the 100ms large-document benchmark)
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml
+
   build-windows:
     runs-on: windows-latest
     steps:
