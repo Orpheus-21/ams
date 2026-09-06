@@ -121,6 +121,33 @@ README does not help someone who has already double-clicked the app. See Task 15
   shortcut (the real test of SPEC.md's success criterion)
 - [ ] Review with human before proceeding
 
+### Open findings from the code review (not blocking v1)
+
+Three findings were fixed in the review commit (cancel signalling, render-resolution
+clamp, `withGlobalTauri`). These were deliberately left open:
+
+1. **No Content Security Policy** (`csp: null`). The actual XSS surface today is close to
+   nil — no untrusted HTML is rendered anywhere, diagnostics go through `textContent`, the
+   preview is canvas — so this is hardening, not an open hole. It is *not* fixed because a
+   wrong CSP breaks the app at runtime and the protocol scheme differs between Windows
+   (`http://tauri.localhost`) and Linux (`tauri://localhost`); shipping one I can only test
+   on Linux risks a blank window on the platform that matters most. Proposed value, to be
+   enabled and verified on Windows in one go:
+   `default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'`.
+2. **The 100ms benchmark measures a layer below where the user feels it.** Task 7 times
+   the Rust recompile only. The real path also serialises the entire document text over IPC
+   on every debounced compile — roughly 1 MB for a 500-page document, on every pause in
+   typing — and sends a base64 PNG back. The headline guarantee is therefore unmeasured at
+   the boundary that actually produces the user's experience. Worth either measuring
+   end-to-end or sending only the changed range.
+3. **The compile holds the document mutex for its whole duration**, so `save_document` and
+   `render_page` queue behind an in-flight compile. Fine at current speeds; would show up as
+   a delayed save on a large cold compile.
+4. **New/Open compile twice** — `setContent` triggers the debounced compile *and* the
+   handler calls `compileNow()` directly. Harmless, wasteful.
+5. **Diagnostics show no line numbers**, though Typst gives spans. The single biggest
+   usability gap in the error bar for the target user.
+
 ### Phase 5: Release Readiness
 
 - [x] Task 13: Finalize bundler config (icons, metadata, versioning, WebView2 bootstrapper)
