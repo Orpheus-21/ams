@@ -134,12 +134,19 @@ clamp, `withGlobalTauri`). These were deliberately left open:
    on Linux risks a blank window on the platform that matters most. Proposed value, to be
    enabled and verified on Windows in one go:
    `default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'`.
-2. **The 100ms benchmark measures a layer below where the user feels it.** Task 7 times
-   the Rust recompile only. The real path also serialises the entire document text over IPC
-   on every debounced compile — roughly 1 MB for a 500-page document, on every pause in
-   typing — and sends a base64 PNG back. The headline guarantee is therefore unmeasured at
-   the boundary that actually produces the user's experience. Worth either measuring
-   end-to-end or sending only the changed range.
+2. ~~**The 100ms benchmark measures a layer below where the user feels it.**~~ **Measured;
+   not a problem.** `tests/benchmark_round_trip.rs` now quantifies it, and doing so corrected
+   two of my own assumptions:
+   - Task 7's fixture reaches 500 pages via `#lorem()` calls, so its *source* is only ~18 KB.
+     Right fixture for compile cost, wrong one for anything that scales with source size.
+     A book someone actually typed is ~866 KB.
+   - Marshalling that 866 KB over IPC costs **~1.8 ms**, not the tens of milliseconds I
+     assumed. Sending edits instead of the whole document would be optimising ~2% of the
+     budget.
+
+   Re-running the 100ms budget against the realistic 866 KB source — which exercises parsing
+   properly, unlike the `#lorem` fixture — gives **~48 ms**, so a book-length document lands
+   at roughly half the budget end to end. Both numbers are now regression-guarded.
 3. **The compile holds the document mutex for its whole duration**, so `save_document` and
    `render_page` queue behind an in-flight compile. Fine at current speeds; would show up as
    a delayed save on a large cold compile.
