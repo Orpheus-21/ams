@@ -93,17 +93,32 @@ forward ahead of the compile engine — see Architecture Decisions.
 - [x] Task 11: Wire the full edit → compile → preview loop end-to-end
 
 ### Checkpoint: Core Loop
-- [ ] Manual smoke test: open app, create a document, type, see live preview update, save, reopen
-- [ ] Compilation confirmed off the UI thread (typing during a large-doc compile doesn't freeze input)
-- [ ] Review with human before proceeding
+- [x] Manual smoke test: verified by the founder on his own Windows laptop, installed from the
+      CI-built NSIS installer. Typing produces an immediate preview update — the app's core
+      thesis is proven on the real target platform, not just in tests.
+- [x] Compilation confirmed off the UI thread (typing stayed responsive)
+- [x] Review with human before proceeding
 
-### Phase 4: Keyboard-First Pass
+**Finding from that session — UI affordances gap (v1 blocker, not polish).** The verdict was
+"clunky as hell, nothing much in terms of UI". That is currently true in a way that directly
+threatens SPEC.md's success criterion: *"hand the Windows installer to a friend cold, and they're
+productive without you sitting next to them."* Right now the app has no menu bar, no visible
+controls of any kind, and the only way to open or save a document is to already know that
+Ctrl+N/O/S exist. A non-technical friend — the exact target user — would open ams, see two panes,
+and have no way to discover how to do anything. Task 12 as written (shortcut coverage + focus
+order, shortcut list "documented somewhere discoverable, e.g. README") does not close this: a
+README does not help someone who has already double-clicked the app. See Task 15.
+
+### Phase 4: Keyboard-First Pass + Minimum Usable UI
 
 - [ ] Task 12: Full keyboard shortcut coverage + focus management
+- [ ] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
 
 ### Checkpoint: Keyboard-First
 - [ ] Manual keyboard-only walkthrough: new, open, edit, save, undo/redo, switch editor↔preview
   focus — no mouse touched, nothing unreachable
+- [ ] Someone who has never seen ams can open, edit, and save a document without being told any
+  shortcut (the real test of SPEC.md's success criterion)
 - [ ] Review with human before proceeding
 
 ### Phase 5: Release Readiness
@@ -410,6 +425,37 @@ in a mouse-only state. No fuzzy command palette in v1, per confirmed spec.
 **Files likely touched:** `src/shortcuts.ts`, `src/main.ts`, `README.md` or `docs/shortcuts.md`
 
 **Estimated scope:** S
+
+---
+
+## Task 15: Minimum discoverable UI
+
+**Description:** Added after the Core Loop checkpoint, where a real install on Windows surfaced
+that the app is undiscoverable to anyone who doesn't already know its shortcuts. Not a polish
+task — SPEC.md's success criterion is a friend being productive without hand-holding, and that is
+currently impossible. Scope is deliberately minimal: the smallest set of affordances that makes
+the app self-explanatory, *not* a toolbar or any markup-inserting UI (still explicitly out of
+scope per the confirmed intent).
+
+**Acceptance criteria:**
+- [ ] A native menu bar with File (New, Open…, Save, Save As…) and Help (Keyboard Shortcuts),
+      each item showing its shortcut, so every action is reachable without prior knowledge
+- [ ] Window title shows the open document's filename, or "Untitled" for a new one
+- [ ] An unsaved-changes indicator (e.g. a dot or asterisk in the title), and a confirm prompt
+      before discarding unsaved work on New/Open/close
+- [ ] The editor/preview split is draggable, and the preview has a zoom control
+
+**Verification:**
+- [ ] Build succeeds: `pnpm tauri build`
+- [ ] Manual check: someone unfamiliar with ams opens it and saves a document without being told
+      anything
+
+**Dependencies:** Task 11
+
+**Files likely touched:** `src-tauri/src/lib.rs` (menu), `src-tauri/src/commands.rs`, `src/main.ts`,
+`index.html`, `src/styles.css`
+
+**Estimated scope:** M
 
 ---
 

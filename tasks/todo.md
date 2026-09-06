@@ -39,13 +39,19 @@ This file is the checklist `/build` and future sessions track progress against.
 - [x] Task 11: Wire the full edit → compile → preview loop end-to-end
 
 ### Checkpoint: Core Loop
-- [ ] Manual smoke test: new doc → type → preview updates → save → reopen
-- [ ] Compilation confirmed off the UI thread
-- [ ] Reviewed with human
+- [x] Manual smoke test: confirmed by the founder on his own Windows laptop, installed from the
+      CI-built NSIS installer — typing produces an immediate preview update. The core thesis
+      works on the actual target platform.
+- [x] Compilation confirmed off the UI thread (typing stayed responsive)
+- [x] Reviewed with human
+- Feedback from that session: **"clunky as hell, nothing much in terms of UI"**. See the UI
+  affordances gap recorded in `plan.md` — this is a v1 blocker against SPEC.md's success
+  criterion, not cosmetic polish.
 
 ## Phase 4: Keyboard-First Pass
 
 - [ ] Task 12: Full keyboard shortcut coverage + focus management
+- [ ] Task 15: Minimum discoverable UI (menu bar, window title, unsaved indicator)
 
 ### Checkpoint: Keyboard-First
 - [ ] Manual keyboard-only walkthrough passes, no mouse
