@@ -2,6 +2,8 @@ import { EditorView, basicSetup } from "codemirror";
 import { Compartment, EditorState } from "@codemirror/state";
 import { typst_lezer } from "codemirror-lang-typst/lezer";
 
+import { editorAppearance } from "./theme";
+
 // ponytail: codemirror-lang-typst's Lezer parser re-parses the *entire*
 // document on every edit (its fragment-reuse path only fires when nothing at
 // all changed — see TypstPartialParse.advance() in its dist/lezer.js). On a
@@ -52,6 +54,8 @@ export function mountEditor(
       doc: initialContent,
       extensions: [
         basicSetup,
+        // After basicSetup so it overrides the default highlight style.
+        editorAppearance,
         language.of(languageExtension(countLines(initialContent))),
         languageSizeGuard,
         ...(onChange ? [changeNotifier] : []),

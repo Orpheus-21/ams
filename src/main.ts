@@ -141,7 +141,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (overlay) mountShortcuts(overlay);
 
   previewPane = document.querySelector<HTMLElement>("#preview");
-  if (previewPane) preview = mountPreview(previewPane);
+  if (previewPane) preview = mountPreview(previewPane, showFailure);
 
   const divider = document.querySelector<HTMLElement>("#divider");
   if (divider) mountSplitter(divider);

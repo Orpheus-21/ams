@@ -23,7 +23,10 @@ export interface PreviewController {
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 
-export function mountPreview(container: HTMLElement): PreviewController {
+export function mountPreview(
+  container: HTMLElement,
+  onRenderError?: (message: string) => void,
+): PreviewController {
   const wrappers: HTMLDivElement[] = [];
   const visible = new Set<number>();
   const rendered = new Set<number>();
@@ -32,6 +35,33 @@ export function mountPreview(container: HTMLElement): PreviewController {
   let geometry: PageGeometry[] = [];
   let zoom = 1;
   let pixelPerPt = devicePixels;
+  // Pages are fitted to the pane until the user zooms deliberately. Without
+  // this, an A4 page (595pt) simply overflows any pane narrower than that and
+  // there is no way to scroll left to see what was cut off.
+  let fitToWidth = true;
+
+  const HORIZONTAL_PADDING = 48;
+
+  function widestPagePt(): number {
+    return geometry.reduce((widest, page) => Math.max(widest, page.width_pt), 0);
+  }
+
+  function fittedZoom(): number {
+    const widest = widestPagePt();
+    if (widest === 0) return zoom;
+    const available = container.clientWidth - HORIZONTAL_PADDING;
+    return clampZoom(available / widest);
+  }
+
+  function clampZoom(value: number): number {
+    return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+  }
+
+  // Refit when the pane is resized by the splitter or the window.
+  new ResizeObserver(() => {
+    if (!fitToWidth) return;
+    applyZoom(fittedZoom());
+  }).observe(container);
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -60,7 +90,9 @@ export function mountPreview(container: HTMLElement): PreviewController {
     rendered.add(index);
     renderPageOnto(canvas, index, pixelPerPt).catch((err) => {
       rendered.delete(index);
-      console.error(`page ${index} failed to render`, err);
+      // A page that silently fails to draw looks identical to a blank page,
+      // so this surfaces rather than only reaching the console.
+      onRenderError?.(`page ${index + 1} failed to render: ${err}`);
     });
   }
 
@@ -78,16 +110,24 @@ export function mountPreview(container: HTMLElement): PreviewController {
     }
 
     while (wrappers.length < pages.length) {
+      const index = wrappers.length;
       const wrapper = document.createElement("div");
       wrapper.className = "preview-page";
-      wrapper.dataset.pageIndex = String(wrappers.length);
+      wrapper.dataset.pageIndex = String(index);
       wrapper.appendChild(document.createElement("canvas"));
       container.appendChild(wrapper);
       observer.observe(wrapper);
       wrappers.push(wrapper);
     }
 
+    // Page numbers are only worth showing once there's more than one page.
+    wrappers.forEach((wrapper, index) => {
+      wrapper.dataset.pageLabel = pages.length > 1 ? String(index + 1) : "";
+    });
+
     geometry = pages;
+    if (fitToWidth) zoom = fittedZoom();
+    pixelPerPt = devicePixels * zoom;
     applyGeometry();
 
     // The document changed, so every page's raster is stale — but only the
@@ -105,8 +145,8 @@ export function mountPreview(container: HTMLElement): PreviewController {
     });
   }
 
-  function setZoom(next: number) {
-    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+  function applyZoom(next: number) {
+    const clamped = clampZoom(next);
     if (clamped === zoom) return;
 
     zoom = clamped;
@@ -121,8 +161,19 @@ export function mountPreview(container: HTMLElement): PreviewController {
 
   return {
     setPages,
-    setZoom,
-    zoomBy: (factor: number) => setZoom(zoom * factor),
-    resetZoom: () => setZoom(1),
+    setZoom(next: number) {
+      fitToWidth = false;
+      applyZoom(next);
+    },
+    zoomBy(factor: number) {
+      fitToWidth = false;
+      applyZoom(zoom * factor);
+    },
+    // Reset goes back to fitting the pane rather than to a literal 100%: at
+    // this size "fits" is what a reader actually wants from a reset.
+    resetZoom() {
+      fitToWidth = true;
+      applyZoom(fittedZoom());
+    },
   };
 }
