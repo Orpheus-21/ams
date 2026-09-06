@@ -123,7 +123,7 @@ README does not help someone who has already double-clicked the app. See Task 15
 
 ### Phase 5: Release Readiness
 
-- [ ] Task 13: Finalize bundler config (icons, metadata, versioning, WebView2 bootstrapper)
+- [x] Task 13: Finalize bundler config (icons, metadata, versioning, WebView2 bootstrapper)
 - [ ] Task 14: Clean-machine install verification (Windows + Linux)
 
 ### Checkpoint: v1 Complete
