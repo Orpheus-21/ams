@@ -24,10 +24,20 @@ export function showDiagnostics(diagnostics: Diagnostic[]): void {
   bar.dataset.severity = diagnostics.some((d) => d.severity === "error") ? "error" : "warning";
   bar.replaceChildren(
     ...diagnostics.map((diagnostic) => {
-      const line = document.createElement("div");
-      line.className = "diagnostic";
-      line.textContent = diagnostic.message;
-      return line;
+      const row = document.createElement("div");
+      row.className = "diagnostic";
+
+      // "line 12" first, because the message alone rarely tells you where to
+      // look in a document of any length.
+      if (diagnostic.line !== null) {
+        const where = document.createElement("span");
+        where.className = "diagnostic-location";
+        where.textContent = `line ${diagnostic.line}`;
+        row.append(where, " ");
+      }
+
+      row.append(diagnostic.message);
+      return row;
     }),
   );
 }
@@ -35,7 +45,7 @@ export function showDiagnostics(diagnostics: Diagnostic[]): void {
 /// Reports a failure of the compile call itself (IPC/backend), as opposed to
 /// a Typst diagnostic about the document.
 export function showFailure(message: string): void {
-  showDiagnostics([{ severity: "error", message }]);
+  showDiagnostics([{ severity: "error", message, line: null, column: null }]);
 }
 
 export function clearDiagnostics(): void {

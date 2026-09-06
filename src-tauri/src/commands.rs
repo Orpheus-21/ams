@@ -13,7 +13,9 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use typst_layout::PagedDocument;
 
-use crate::compile::{CompileError, CompileSession};
+use typst::diag::SourceDiagnostic;
+
+use crate::compile::CompileSession;
 
 /// The single open document's state: which file (if any) it's saved to, the
 /// compile session tied to that file's directory (for sibling-asset
@@ -75,6 +77,11 @@ pub struct RenderedPage {
 pub struct Diagnostic {
     pub severity: &'static str,
     pub message: String,
+    /// 1-based position in the document, when the diagnostic points at one.
+    /// `None` for diagnostics Typst reports without a location, or that point
+    /// into a sibling file rather than the open document.
+    pub line: Option<usize>,
+    pub column: Option<usize>,
 }
 
 /// Render resolution bounds. 4 px/pt is already well past retina for a page
@@ -83,8 +90,21 @@ pub struct Diagnostic {
 const MIN_PIXEL_PER_PT: f32 = 0.1;
 const MAX_PIXEL_PER_PT: f32 = 4.0;
 
-fn error_diagnostics(err: &CompileError) -> Vec<Diagnostic> {
-    err.0.iter().map(|d| Diagnostic { severity: "error", message: d.message.to_string() }).collect()
+fn diagnostics_of(
+    session: &CompileSession,
+    diagnostics: impl IntoIterator<Item = SourceDiagnostic>,
+    severity: &'static str,
+) -> Vec<Diagnostic> {
+    diagnostics
+        .into_iter()
+        .map(|d| {
+            let (line, column) = match session.location_of(d.span) {
+                Some((line, column)) => (Some(line), Some(column)),
+                None => (None, None),
+            };
+            Diagnostic { severity, message: d.message.to_string(), line, column }
+        })
+        .collect()
 }
 
 fn file_name_of(path: &Path) -> String {
@@ -139,11 +159,7 @@ fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
                     height_pt: page.frame.height().to_pt(),
                 })
                 .collect();
-            let diagnostics = output
-                .warnings
-                .iter()
-                .map(|w| Diagnostic { severity: "warning", message: w.message.to_string() })
-                .collect();
+            let diagnostics = diagnostics_of(&inner.session, output.warnings, "warning");
             inner.document = Some(output.document);
             CompileResult { success: true, pages, diagnostics }
         }
@@ -153,7 +169,8 @@ fn compile_at(state: &DocumentState, text: &str) -> CompileResult {
         // the error surfaced in the UI. `reset`/`open_at`/`save_at` do clear
         // it, since those genuinely change which document is open.
         Err(err) => {
-            CompileResult { success: false, pages: Vec::new(), diagnostics: error_diagnostics(&err) }
+            let diagnostics = diagnostics_of(&inner.session, err.0, "error");
+            CompileResult { success: false, pages: Vec::new(), diagnostics }
         }
     }
 }
@@ -330,6 +347,16 @@ mod tests {
         assert!(!result.success);
         assert!(result.pages.is_empty());
         assert!(!result.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn a_diagnostic_reports_the_line_it_is_on() {
+        let state = DocumentState::default();
+        let result = compile_at(&state, "= Fine\n\nAlso fine.\n\n#unknown_function()\n");
+
+        let diagnostic = result.diagnostics.first().expect("an error was reported");
+        assert_eq!(diagnostic.line, Some(5), "the bad call is on line 5");
+        assert!(diagnostic.column.is_some());
     }
 
     #[test]

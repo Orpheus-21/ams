@@ -12,6 +12,9 @@ export interface OpenedDocument {
 export interface Diagnostic {
   severity: "error" | "warning";
   message: string;
+  /// 1-based, null when the diagnostic doesn't point into the open document.
+  line: number | null;
+  column: number | null;
 }
 
 export interface PageInfo {

@@ -74,6 +74,11 @@ body {
   background: #b3261e;
 }
 
+.diagnostic-location {
+  opacity: 0.75;
+  font-weight: 600;
+}
+
 #diagnostics[data-severity="warning"] {
   color: #241a00;
   background: #ffd666;

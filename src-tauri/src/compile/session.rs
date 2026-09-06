@@ -8,6 +8,8 @@
 
 use std::path::PathBuf;
 
+use typst::syntax::DiagSpan;
+
 use super::world::AmsWorld;
 use super::{compile, CompileError, CompileOutput};
 
@@ -34,5 +36,11 @@ impl CompileSession {
         self.world.begin_compile();
         self.world.set_text(text);
         compile(&self.world)
+    }
+
+    /// 1-based line and column of a diagnostic in the current text. See
+    /// [`AmsWorld::location_of`].
+    pub fn location_of(&self, span: DiagSpan) -> Option<(usize, usize)> {
+        self.world.location_of(span)
     }
 }

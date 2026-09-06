@@ -10,10 +10,10 @@ use std::path::PathBuf;
 
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime, Duration};
-use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
+use typst::syntax::{DiagSpan, DiagSpanKind, FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
-use typst::{Library, LibraryExt, World};
+use typst::{Library, LibraryExt, World, WorldExt};
 use typst_kit::datetime::Time;
 use typst_kit::files::{FileLoader, FileStore, FsRoot};
 use typst_kit::fonts::FontStore;
@@ -84,6 +84,26 @@ impl AmsWorld {
     /// where possible (an incremental reparse of just the changed range).
     pub fn set_text(&mut self, text: &str) {
         self.main_source.replace(text);
+    }
+
+    /// 1-based line and column of a diagnostic inside the main document.
+    ///
+    /// Returns `None` for diagnostics that don't point anywhere (Typst calls
+    /// these detached) or that point into a sibling file rather than the
+    /// document being edited — the editor can only usefully jump to its own
+    /// buffer.
+    pub fn location_of(&self, span: DiagSpan) -> Option<(usize, usize)> {
+        let id = match span.get() {
+            DiagSpanKind::Detached => return None,
+            DiagSpanKind::Number { id, .. } | DiagSpanKind::Range { id, .. } => id,
+        };
+        if id != self.main_id {
+            return None;
+        }
+
+        let range = self.range(span)?;
+        let (line, column) = self.main_source.lines().byte_to_line_column(range.start)?;
+        Some((line + 1, column + 1))
     }
 
     /// Prepares this world for a fresh compile: marks cached sibling files
