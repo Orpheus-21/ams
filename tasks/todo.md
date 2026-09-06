@@ -59,8 +59,8 @@ This file is the checklist `/build` and future sessions track progress against.
 
 ## Phase 6: Make it look good
 
-- [ ] Task 16: Visual design pass (typography, colour system, page presentation, states)
-- [ ] Task 17: Calm, legible Typst syntax highlighting theme
+- [x] Task 16: Visual design pass (typography, colour system, page presentation, states)
+- [x] Task 17: Calm, legible Typst syntax highlighting theme
 
 ## Phase 5: Release Readiness
 

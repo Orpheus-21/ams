@@ -159,11 +159,11 @@ undermines trust in the documents it produces.
 Constraint that does not change: this is still a markup editor. Looking good means typography,
 spacing, colour and restraint — not a toolbar, not WYSIWYG.
 
-- [ ] Task 16: Visual design pass — editor and preview typography, a real colour system with
+- [x] Task 16: Visual design pass — editor and preview typography, a real colour system with
       light/dark, page presentation in the preview (shadow, margins, page numbers), diagnostics
       that read as part of the app rather than a browser error, focus and hover states, and an
       empty state that tells a first-time user what to do
-- [ ] Task 17: Typst syntax highlighting theme that is legible and calm rather than the default
+- [x] Task 17: Typst syntax highlighting theme that is legible and calm rather than the default
       rainbow, matched to the app's palette
 
 ### Phase 5: Release Readiness
